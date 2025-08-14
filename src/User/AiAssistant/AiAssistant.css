@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+.ai-chatbox-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 340px;
+  height: 500px;
+  background: white;
+  font-family: 'Poppins', sans-serif;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #ccc;
+}
+
+.ai-chatbox-header {
+  background-color: #32b2b2;
+  color: white;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.ai-chatbox-header button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.ai-chatbox-body {
+  padding: 12px;
+  flex-grow: 1;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+  font-size: 0.95rem;
+}
+
+.ai-message {
+  margin: 6px 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  max-width: 85%;
+  line-height: 1.4;
+}
+
+.ai-message.ai {
+  background-color: #e1f7f7;
+  align-self: flex-start;
+}
+
+.ai-message.user {
+  background-color: #d1f0d0;
+  align-self: flex-end;
+}
+
+.ai-faq-suggestions {
+  margin-top: 12px;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+}
+
+.faq-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.ai-faq-suggestions button {
+  display: block;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 8px 12px;
+  border: none;
+  background-color: #32b2b2;
+  color: white;
+  font-size: 0.85rem;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}
+
+.ai-faq-suggestions button:hover {
+  background-color: #289999;
+}
+
+.ai-chatbox-footer {
+  display: flex;
+  border-top: 1px solid #eee;
+  padding: 10px;
+  background-color: #fff;
+}
+
+.ai-chatbox-footer input {
+  flex: 1;
+  border: 1px solid #ccc;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  border-radius: 10px;
+  outline: none;
+}
+
+.ai-chatbox-footer button {
+  background: #32b2b2;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  margin-left: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}

@@ -1,0 +1,185 @@
+/* ───────────────────────────  Reset & Base  ───────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+  background: #f7f9fc;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* ───────────────────────────  Layout  ───────────────────────────── */
+.appointment-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 2rem;
+  gap: 2rem;
+  min-height: 100vh;
+  background-color: #edf2f7;
+}
+
+/* ───────────────────────────  Panels  ───────────────────────────── */
+.left-panel,
+.calendar-panel,
+.time-panel {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  min-height: 85vh;
+}
+
+.left-panel {
+  max-width: 300px;
+  justify-content: space-between;
+}
+
+/* ───────────────────────────  Titles & Headings  ───────────────── */
+.left-panel h3,
+.calendar-panel h4,
+.time-panel h4 {
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #1a202c;
+}
+
+/* ───────────────────────────  Duration & Info Cards  ───────────── */
+.duration {
+  background: #e0f7f7;
+  color: #32b2b2;
+  padding: 0.3rem 0.6rem;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 14px;
+  margin-top: 1rem;
+  align-self: center;
+}
+
+.info-card {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 1rem;
+  font-size: 14px;
+  margin-top: auto;
+  color: #333;
+}
+
+/* ───────────────────────────  Actions Buttons  ─────────────────── */
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-top: 2rem;
+}
+
+.actions button {
+  flex: 1;
+  padding: 0.45rem 0.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #32b2b2;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+
+.actions button:hover {
+  background: #289c9c;
+}
+
+/* ───────────────────────────  Calendar Grid  ───────────────────── */
+.calendar-header,
+.toggle-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-size: 16px;
+  color: #1a202c;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.day-name,
+.calendar-day {
+  text-align: center;
+  font-size: 14px;
+  padding: 0.5rem 0;
+  color: #444;
+}
+
+.calendar-day {
+  background: #f1f1f1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.calendar-day:hover {
+  background: #cfd8dc;
+}
+
+.calendar-day.selected {
+  background: #32b2b2;
+  color: #fff;
+}
+
+.calendar-day.disabled {
+  background: #eee;
+  color: #aaa;
+  pointer-events: none;
+}
+
+/* ───────────────────────────  Time Slots  ───────────────────────── */
+.time-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.time-slot {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  background: #f8f8f8;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s ease;
+}
+
+.time-slot:hover {
+  background: #e0f7f7;
+}
+
+.time-slot.selected {
+  background: #32b2b2;
+  color: #fff;
+  border-color: #32b2b2;
+}
