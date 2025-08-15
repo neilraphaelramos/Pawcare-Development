@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import axios from "axios";
 import "./Auth.css";
+import { UserContext } from "../../hook/authContext";
 
 export default function Login() {
+  const { setUser } = useContext(UserContext);
   const [form, setForm] = useState({
     email: "", // use email if your backend login expects email
     password: "",
@@ -24,8 +26,20 @@ export default function Login() {
       const res = await axios.post("http://localhost:5000/login", form);
 
       if (res.data.message === "Login successful") {
-        alert("Login successful!");
-        navigate("/users/"); 
+        const role = res.data.user.role;
+
+        setUser(res.data.user);
+
+        alert(`Login successful! Role: ${role}`);
+        console.log(res.data)
+
+        if (role === "Admin") {
+          navigate("/admin");
+        } else if (role === "Veterinarian") {
+          navigate("/veterinarian");
+        } else {
+          navigate("/users");
+        }
       } else {
         alert("Login failed.");
       }
@@ -41,72 +55,62 @@ export default function Login() {
       </div>
 
       <div className="login-form-section">
-      <motion.div
-      className="login-card"
-      initial={{ opacity: 0, x: 80 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-    >
+        <motion.div
+          className="login-card"
+          initial={{ opacity: 0, x: 80 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
 
 
-        <h1>Login</h1>
-        <p className="subtext">Enter your credentials to access your account</p>
+          <h1>Login</h1>
+          <p className="subtext">Enter your credentials to access your account</p>
 
-        <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
+          <form onSubmit={handleSubmit} className="login-form">
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              required
+            />
 
-          <div className="forgot-password">
-            <a href="#">Forgot password?</a>
+            <div className="forgot-password">
+              <a href="#">Forgot password?</a>
+            </div>
+            <button type="submit">Log In</button>
+          </form>
+
+          <div className="divider">
+            <span>Or continue with</span>
           </div>
 
-          <button type="submit">Log In</button>
-        </form>
+          <div className="social-login">
+            <button className="google">
+              <img
+                src="https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png"
+                alt="Google icon"
+                className="icon"
+              />
+              Google
+            </button>
+          </div>
 
-        <div className="divider">
-          <span>Or continue with</span>
-        </div>
-
-        <div className="social-login">
-          <button className="google">
-            <img
-              src="https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png"
-              alt="Google icon"
-              className="icon"
-            />
-            Google
-          </button>
-
-          <button className="facebook">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png"
-              alt="Facebook icon"
-              className="icon"
-            />
-            Facebook
-          </button>
-        </div>
-
-        <p className="signup-text">
-          Don’t have an account? <Link to="/signup">Sign up</Link>
-        </p>
-      </motion.div>
-    </div>
-  </div>
-);
+          <p className="signup-text">
+            Don’t have an account? <Link to="/signup">Sign up</Link>
+          </p>
+        </motion.div>
+      </div>
+    </div >
+  );
 
 }

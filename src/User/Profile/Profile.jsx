@@ -1,23 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import "./Profile.css";
+import { UserContext } from "../../hook/authContext";
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(true);
   const [showImageModal, setShowImageModal] = useState(false);
+  const { user } = useContext(UserContext);
+
+  if (!user) return <p>Please log in.</p>;
 
   const [formData, setFormData] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "johndoe@example.com",
-    phone: "+63 912 345 6789",
-    bio: "Pet Owner",
-    country: "Philippines",
-    state: "Cebu",
-    postalCode: "6000",
-    taxId: "TX123456789",
-    currentPassword: "",
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
+    email: user.email || "",
+    phone: user.phone || "",
+    bio: "Pet Owner" || "",
+    country: "Philippines" || "",
+    state: "Cebu" || "",
+    postalCode: user.zipCode || "",
+    taxId: "TX123456789" || "",
+    currentPassword: "" || "",
     newPassword: "",
-    confirmPassword: "",
+    confirmPassword: "" || "",
     profileImage: null,
   });
 

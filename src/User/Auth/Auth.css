@@ -1,4 +1,3 @@
-
 * {
   box-sizing: border-box;
 }
@@ -27,8 +26,8 @@ body {
 
 .login-image-section img {
   width: 100%;
-  height: auto; 
-  object-fit: contain; 
+  height: auto;
+  object-fit: contain;
 }
 
 .login-form-section {
@@ -62,17 +61,18 @@ body {
 
 .register-card {
   width: 100%;
-  max-width: 800px; 
-  padding: 24px 32px; 
+  max-width: 800px;
+  padding: 24px 32px;
   background: #ffffff;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   border-radius: 10px;
 }
 
-.register-card form {
+.forminfo {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+  margin-bottom: 10px;
 }
 
 
@@ -86,7 +86,7 @@ body {
 }
 
 .register-card button[type="submit"] {
-  grid-column: span 3; 
+  grid-column: span 3;
   padding: 10px;
   font-size: 15px;
   background-color: #26a0a0;
@@ -94,8 +94,9 @@ body {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-   
+
 }
+
 .register-card button[type="submit"]:hover {
   background-color: #1d7f7f;
 }
@@ -112,7 +113,7 @@ h1 {
   font-size: 14px;
 }
 
-form {
+.login-form {
   display: flex;
   flex-direction: column;
 }
@@ -151,6 +152,7 @@ button[type="submit"] {
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s ease;
+  width: 100%;
 }
 
 button[type="submit"]:hover {
@@ -285,11 +287,13 @@ button[type="submit"]:hover {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 .input-like {
   width: 100%;
   padding: 10px;
@@ -299,4 +303,36 @@ button[type="submit"]:hover {
   font-size: 1rem;
   background-color: white;
   box-sizing: border-box;
+}
+
+.terms-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 12pt;
+}
+
+.terms-input {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: #4caf50;
+  flex-shrink: 0;
+}
+
+.terms-text {
+  color: #555;
+  user-select: none;
+  outline: none;
+}
+
+.terms-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.terms-text a {
+  color: #1976d2;
+  text-decoration: underline;
+  outline: none;
+
 }

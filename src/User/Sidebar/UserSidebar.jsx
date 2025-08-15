@@ -1,9 +1,18 @@
 // src/components/UserSidebar.jsx
-import React from "react";
+import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 import "./UserSidebar.css"; 
+import { UserContext } from "../../hook/authContext";
+import { useNavigate } from "react-router-dom";
 
 const UserSidebar = () => {
+  const { logout } = useContext(UserContext);
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    navigate("/");
+    logout();
+  }
+
   return (
     <aside className="user-dashboard-sidebar">
       <div className="user-dashboard-logo">Pawcare</div>
@@ -15,7 +24,7 @@ const UserSidebar = () => {
         <Link to="online-consultation">Online Consultation</Link>
         <Link to="profile">Profile</Link>
       </nav>
-      <button className="user-dashboard-sign-out">Sign Out</button>
+      <button className="user-dashboard-sign-out" onClick={handleLogout}>Sign Out</button>
     </aside>
   );
 };

@@ -12,6 +12,8 @@ import {
   FaUserCircle,
 } from "react-icons/fa";
 
+import ProtectedRoute from "./hook/ProtectedRoute";
+
 // Admin Sidebar
 import AdminSidebar from "./modules/AdminSidebar/AdminSidebar";
 import UserSidebar from "./User/Sidebar/UserSidebar";
@@ -73,12 +75,14 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            <div className="app" style={{ display: "flex" }}>
-              <AdminSidebar />
-              <main className="main-content" style={{ flexGrow: 1 }}>
-                <Outlet />
-              </main>
-            </div>
+            <ProtectedRoute>
+              <div className="app" style={{ display: "flex" }}>
+                <AdminSidebar />
+                <main className="main-content" style={{ flexGrow: 1 }}>
+                  <Outlet />
+                </main>
+              </div>
+            </ProtectedRoute>
           }
         >
           <Route index element={<AdminDashboard />} />
@@ -90,18 +94,20 @@ export default function App() {
           <Route path="notifications" element={<AdminNotifications />} />
           <Route path="accounts" element={<Accounts />} />
           <Route path="view-orders" element={<ViewOrders />} />
-          <Route path="online-consultation" element={<VetConsultationAdmin/>} />
+          <Route path="online-consultation" element={<VetConsultationAdmin />} />
         </Route>
-        
+
         <Route
           path="/users"
           element={
-            <div className="user-app" style={{ display: 'flex' }}>
-              <UserSidebar />  {/* Add sidebar here */}
-              <main className="main-content" style={{ flexGrow: 1 }}>
-                <Outlet />
-              </main>
-            </div>
+            <ProtectedRoute>
+              <div className="user-app" style={{ display: 'flex' }}>
+                <UserSidebar />  {/* Add sidebar here */}
+                <main className="main-content" style={{ flexGrow: 1 }}>
+                  <Outlet />
+                </main>
+              </div>
+            </ProtectedRoute>
           }
         >
           <Route index element={<UserDashboard />} />
@@ -119,12 +125,14 @@ export default function App() {
         <Route
           path="/veterinarian"
           element={
-            <div className="vet-app" style={{ display: 'flex' }}>
-              <VetSidebar />  {/* Add sidebar here */}
-              <main className="main-content" style={{ flexGrow: 1 }}>
-                <Outlet />
-              </main>
-            </div>
+            <ProtectedRoute>
+              <div className="vet-app" style={{ display: 'flex' }}>
+                <VetSidebar />  {/* Add sidebar here */}
+                <main className="main-content" style={{ flexGrow: 1 }}>
+                  <Outlet />
+                </main>
+              </div>
+            </ProtectedRoute>
           }
         >
           <Route index element={<VetDashboard />} />
@@ -137,7 +145,7 @@ export default function App() {
           <Route path="profile" element={<VetProfile />} />
         </Route>
       </Routes>
-      
+
     </Router>
   );
 }

@@ -1,8 +1,17 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 import "./AdminSidebar.css"; 
+import { UserContext } from "../../hook/authContext";
+import { useNavigate } from "react-router-dom";
 
 const AdminSidebar = () => {
+  const { logout } = useContext(UserContext);
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    navigate("/");
+    logout();
+  }
+
   return (
     <aside className="admin-dashboard-sidebar">
       <div className="admin-dashboard-logo">Pawcare</div>
@@ -18,7 +27,7 @@ const AdminSidebar = () => {
         <Link to="features">Manage Features</Link> 
         <Link to="accounts">Manage Accounts</Link>
       </nav>
-      <button className="admin-dashboard-sign-out">Sign Out</button>
+      <button className="admin-dashboard-sign-out" onClick={handleLogout}>Sign Out</button>
     </aside>
   );
 };
