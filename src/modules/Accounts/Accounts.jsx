@@ -4,29 +4,6 @@ import './Accounts.css';
 import { UserContext } from '../../hook/authContext';
 import axios from "axios";
 
-/*const initialUsers = [
-  {
-    id: 1,
-    fullName: 'Adira Cruz',
-    username: 'adiracruz',
-    email: 'adira@example.com',
-    phone: '09171234567',
-    password: 'encryptedpassword',
-    role: 'Veterinarian/Staff',
-    image: '',
-  },
-  {
-    id: 2,
-    fullName: 'Juan Dela Cruz',
-    username: 'juandelacruz',
-    email: 'juan@example.com',
-    phone: '09179876543',
-    password: 'encryptedpassword',
-    role: 'User',
-    image: '',
-  },
-];*/
-
 const Accounts = () => {
   const { setAllUser, allUser } = useContext(UserContext);
   const [users, setUsers] = useState([]);
@@ -52,17 +29,25 @@ const Accounts = () => {
         return;
       }
 
-      // since server already returns formatted users
       setAllUser(data);
 
-      console.log(
-        data.length === 0 ? "No user found!" : "Users from server:",
-        data
-      );
     } catch (err) {
       console.error("Error fetching accounts:", err);
     }
   };
+
+  const handleAddAccount = async (e) => {
+    e.preventDefault();
+    try {
+
+      const res = await axios.post("http://localhost:5000/add_account", newUser);
+      alert(res.data.message);
+      closeModal();
+      handleAccounts();
+    } catch (err) {
+      console.error("Error adding account:", err);
+    }
+  }
 
   useEffect(() => {
     setUsers(allUser);
@@ -282,7 +267,7 @@ const Accounts = () => {
             </div>
 
             <div className="accounts-modal-buttons">
-              <button className="accounts-primary-btn" onClick={handleSave}>
+              <button className="accounts-primary-btn" onClick={handleAddAccount}>
                 {editingIndex !== null ? 'Update' : 'Add'}
               </button>
               <button className="accounts-cancel-btn" onClick={closeModal}>Cancel</button>

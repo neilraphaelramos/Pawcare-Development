@@ -1,13 +1,13 @@
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 const mysql = require('mysql');
 const bcrypt = require('bcrypt'); // 🔐 bcrypt for hashing
 const app = express();
 const port = 5000;
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // MySQL connection
 const db = mysql.createConnection({
@@ -136,6 +136,66 @@ app.post("/data", (req, res) => {
 
     res.json(formattedUsers);
   });
+});
+
+app.post('/add_account', async (req, res) => {
+  const { fullName, username, email, phone, password, role, image } = req.body;
+
+  try {
+    if (!fullName || fullName.trim() === "") {
+      return res.status(400).json({ error: "Full name is required" });
+    }
+
+    // Split fullname by "-" and trim spaces
+    const parts = fullName.split("-").map(p => p.trim());
+    const firstName = parts[0] || "";
+    const middleName = parts[1] || "";
+    const lastName = parts[2] || "";
+    const suffix = parts[3] || "";
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const setRole = ['User', 'Admin', 'Veterinarian'].includes(role) ? role : 'User';
+
+    let imageBuffer = null;
+    if (image) {
+      const base64Data = image.replace(/^data:.+;base64,/, "");
+      imageBuffer = Buffer.from(base64Data, "base64");
+    }
+
+    const sql_credentials = `
+      INSERT INTO user_credentials (userName, email, password, userRole)
+      VALUES (?, ?, ?, ?)
+    `;
+
+    const sql_informations = `
+      INSERT INTO user_infos 
+      (user_id, firstName, middleName, lastName, suffix, phoneNumber, profile_Pic)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(sql_credentials, [username, email, hashedPassword, setRole], (err, result) => {
+      if (err) {
+        console.error('DB credentials insert error:', err);
+        return res.status(500).json({ error: 'Add Account failed (credentials)' });
+      }
+
+      const info_values = [result.insertId, firstName, middleName, lastName, suffix, phone, imageBuffer];
+
+      db.query(sql_informations, info_values, (err2) => {
+        if (err2) {
+          console.error('DB infos insert error:', err2);
+          return res.status(500).json({ error: 'Add Account failed (infos)' });
+        }
+
+        return res.status(200).json({ message: 'Add Account Successful' });
+      });
+    });
+
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 app.post('/login', (req, res) => {
