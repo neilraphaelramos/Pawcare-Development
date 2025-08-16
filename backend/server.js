@@ -155,7 +155,14 @@ app.post('/add_account', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const setRole = ['User', 'Admin', 'Veterinarian'].includes(role) ? role : 'User';
+    let setRole;
+    if (role === 'User') { 
+      setRole = "User"; 
+    } else if (role === 'Admin') { 
+      setRole = "Admin" 
+    } else { 
+      setRole = "Veterinarian"; 
+    }
 
     let imageBuffer = null;
     if (image) {
