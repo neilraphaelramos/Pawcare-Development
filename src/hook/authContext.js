@@ -8,6 +8,11 @@ export const UserProvider = ({ children }) => {
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
+  const [allUser, setAllUser] = useState(() => {
+    const storedAllData = localStorage.getItem("userList");
+    return storedAllData ? JSON.parse(storedAllData) : [];
+  });
+
   useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));
@@ -16,13 +21,22 @@ export const UserProvider = ({ children }) => {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (allUser) {
+      localStorage.setItem("userList", JSON.stringify(allUser));
+    } else {
+      localStorage.removeItem("userList");
+    }
+  }, [allUser]);
+
   const logout = () => {
     setUser(null);
+    setAllUser(null);
     console.log("User logged out");
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, logout }}>
+    <UserContext.Provider value={{ user, setUser, logout, setAllUser, allUser }}>
       {children}
     </UserContext.Provider>
   );

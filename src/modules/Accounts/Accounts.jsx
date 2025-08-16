@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Edit, Trash2 } from 'lucide-react';
 import './Accounts.css';
+import { UserContext } from '../../hook/authContext';
+import axios from "axios";
 
-const initialUsers = [
+/*const initialUsers = [
   {
     id: 1,
     fullName: 'Adira Cruz',
@@ -23,9 +25,10 @@ const initialUsers = [
     role: 'User',
     image: '',
   },
-];
+];*/
 
 const Accounts = () => {
+  const { setAllUser, allUser } = useContext(UserContext);
   const [users, setUsers] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -40,8 +43,33 @@ const Accounts = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const handleAccounts = async () => {
+    try {
+      const { data } = await axios.post("http://localhost:5000/data");
+
+      if (!Array.isArray(data)) {
+        console.error("Invalid response format from server.");
+        return;
+      }
+
+      // since server already returns formatted users
+      setAllUser(data);
+
+      console.log(
+        data.length === 0 ? "No user found!" : "Users from server:",
+        data
+      );
+    } catch (err) {
+      console.error("Error fetching accounts:", err);
+    }
+  };
+
   useEffect(() => {
-    setUsers(initialUsers);
+    setUsers(allUser);
+  }, [allUser]);
+
+  useEffect(() => {
+    handleAccounts();
   }, []);
 
   const openModal = (index = null) => {
@@ -148,9 +176,9 @@ const Accounts = () => {
             {users
               .filter(
                 (user) =>
-                  user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  user.email.toLowerCase().includes(searchQuery.toLowerCase())
+                  user.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  user.email?.toLowerCase().includes(searchQuery.toLowerCase())
               )
               .map((user, index) => (
                 <tr key={user.id}>

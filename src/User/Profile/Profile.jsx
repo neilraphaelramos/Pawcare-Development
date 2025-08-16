@@ -14,15 +14,15 @@ export default function Profile() {
     lastName: user.lastName || "",
     email: user.email || "",
     phone: user.phone || "",
-    bio: "Pet Owner" || "",
+    bio: user.bio || "",
     country: "Philippines" || "",
-    state: "Cebu" || "",
+    state: user.municipality || "",
     postalCode: user.zipCode || "",
     taxId: "TX123456789" || "",
     currentPassword: "" || "",
     newPassword: "",
     confirmPassword: "" || "",
-    profileImage: null,
+    profileImage: user.pic ? `data:image/jpeg;base64,${user.pic}` : null,
   });
 
   const handleChange = (e) => {
@@ -52,8 +52,8 @@ export default function Profile() {
               <img
                 src={
                   formData.profileImage
-                    ? URL.createObjectURL(formData.profileImage)
-                    : "https://via.placeholder.com/100"
+                    ? formData.profileImage
+                    : "https://placehold.co/400"
                 }
                 alt="avatar"
                 className="pf-profile__avatar-image"
@@ -242,7 +242,7 @@ export default function Profile() {
               className="pf-profile__modal-avatar"
               src={
                 formData.profileImage
-                  ? URL.createObjectURL(formData.profileImage)
+                  ? formData.profileImage
                   : "https://via.placeholder.com/100"
               }
               alt="Current"

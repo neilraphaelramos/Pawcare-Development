@@ -22,6 +22,8 @@ CREATE TABLE user_infos (
     municipality VARCHAR(50) NULL,
     barangay VARCHAR(50) NULL,
     zipCode VARCHAR(10) NULL,
+    profile_Pic BLOB NULL,
+    bio TEXT NULL,
     
     CONSTRAINT fk_user
     	FOREIGN KEY (user_ID) REFERENCES user_credentials(id)
