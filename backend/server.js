@@ -25,7 +25,6 @@ db.connect((err) => {
   }
 });
 
-// Registration route with password hashing
 app.post('/register', async (req, res) => {
   const {
     firstName,
@@ -145,7 +144,6 @@ app.post('/add_account', async (req, res) => {
       return res.status(400).json({ error: "Full name is required" });
     }
 
-    // Split fullname by "-" and trim spaces
     const parts = fullName.split("-").map(p => p.trim());
     const firstName = parts[0] || "";
     const middleName = parts[1] || "";
@@ -155,12 +153,12 @@ app.post('/add_account', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     let setRole;
-    if (role === 'User') { 
-      setRole = "User"; 
-    } else if (role === 'Admin') { 
-      setRole = "Admin" 
-    } else { 
-      setRole = "Veterinarian"; 
+    if (role === 'User') {
+      setRole = "User";
+    } else if (role === 'Admin') {
+      setRole = "Admin"
+    } else {
+      setRole = "Veterinarian";
     }
 
     let imageBuffer = null;
@@ -205,7 +203,87 @@ app.post('/add_account', async (req, res) => {
 });
 
 app.post('/update_account_admin', async (req, res) => {
+  const { id, fullName, username, email, phone, password, role, image } = req.body;
 
+  try {
+    if (!fullName || fullName.trim() === "") {
+      return res.status(400).json({ error: "Full name is required" });
+    }
+
+    const parts = fullName.split("-").map(p => p.trim());
+    const firstName = parts[0] || "";
+    const middleName = parts[1] || "";
+    const lastName = parts[2] || "";
+    const suffix = parts[3] || "";
+
+    let hashedPassword = null;
+    if (password && password.trim() !== "") {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    let imageBuffer = null;
+    if (image) {
+      const base64Data = image.replace(/^data:.+;base64,/, "");
+      imageBuffer = Buffer.from(base64Data, "base64");
+    }
+
+    const updateCredentialSql = `
+      UPDATE user_credentials 
+      SET userName = ?, email = ?, userRole = ? ${hashedPassword ? ", password = ?" : ""} 
+      WHERE id = ?`;
+
+    const credentialParams = hashedPassword
+      ? [username, email, role, hashedPassword, id]
+      : [username, email, role, id];
+
+    const updateInfoSql = `
+      UPDATE user_infos 
+      SET firstName = ?, middleName = ?, lastName = ?, suffix = ?, phoneNumber = ? ${imageBuffer ? ", profile_Pic = ?" : ""} 
+      WHERE user_ID = ?`;
+
+    const infoParams = imageBuffer
+      ? [firstName, middleName, lastName, suffix, phone, imageBuffer, id]
+      : [firstName, middleName, lastName, suffix, phone, id];
+
+    db.beginTransaction(err => {
+      if (err) {
+        console.error("Transaction error:", err);
+        return res.status(500).json({ error: "Transaction failed" });
+      }
+
+      db.query(updateCredentialSql, credentialParams, (err, result1) => {
+        if (err) {
+          return db.rollback(() => {
+            console.error("Error updating credentials:", err);
+            res.status(500).json({ error: "Failed to update credentials" });
+          });
+        }
+
+        db.query(updateInfoSql, infoParams, (err, result2) => {
+          if (err) {
+            return db.rollback(() => {
+              console.error("Error updating user info:", err);
+              res.status(500).json({ error: "Failed to update user info" });
+            });
+          }
+
+          db.commit(err => {
+            if (err) {
+              return db.rollback(() => {
+                console.error("Commit error:", err);
+                res.status(500).json({ error: "Transaction commit failed" });
+              });
+            }
+            res.json({ message: "Account updated successfully!" });
+          });
+        });
+      });
+    });
+
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 app.post('/login', (req, res) => {
@@ -270,6 +348,27 @@ app.post('/login', (req, res) => {
   });
 });
 
+app.post('/delete_account', (req, res) => {
+  const { id } = req.body
+
+  try {
+    const deleteSql = `DELETE FROM user_credentials WHERE id = ?`;
+
+    db.query(deleteSql, [id], (err, result) => {
+    if (err) {
+      console.error('Deletion error:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    } else {
+      res.status(200).json({
+        message: 'Deletion Successful!',
+      });
+    }
+    })
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

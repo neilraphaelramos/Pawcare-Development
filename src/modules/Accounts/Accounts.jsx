@@ -36,10 +36,43 @@ const Accounts = () => {
     }
   };
 
+  const handleUpdate = async (id) => {
+    if (!window.confirm("Are you sure you want to update this account?")) return;
+
+    try {
+      const response = await fetch("http://localhost:5000/update_account_admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          fullName: newUser.fullName,
+          username: newUser.username,
+          email: newUser.email,
+          phone: newUser.phone,
+          password: newUser.password,
+          role: newUser.role,
+          image: newUser.image
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert(data.message);
+        setEditingIndex(null);
+        handleAccounts();
+        closeModal();
+      } else {
+        alert(data.error || "Update failed");
+      }
+    } catch (err) {
+      console.error("Update error:", err);
+      alert("Server error");
+    }
+  };
+
   const handleAddAccount = async (e) => {
     e.preventDefault();
     try {
-
       const res = await axios.post("http://localhost:5000/add_account", newUser);
       alert(res.data.message);
       closeModal();
@@ -105,24 +138,31 @@ const Accounts = () => {
     }
   };
 
-  const handleSave = () => {
-    if (!newUser.fullName || !newUser.username || !newUser.email || !newUser.role) return;
+  const handleDeleteAccount = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this account?")) return;
 
-    const updatedUsers = [...users];
-    if (editingIndex !== null) {
-      updatedUsers[editingIndex] = newUser;
-    } else {
-      updatedUsers.push({ ...newUser, id: users.length + 1 });
+    try {
+      const response = await fetch("http://localhost:5000/delete_account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(data.message || "Account deleted successfully");
+        handleAccounts();
+        closeModal();
+      } else {
+        alert(data.error || "Failed to delete account");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Server error");
     }
-
-    setUsers(updatedUsers);
-    closeModal();
-  };
-
-  const handleDelete = (index) => {
-    const updated = [...users];
-    updated.splice(index, 1);
-    setUsers(updated);
   };
 
   return (
@@ -184,7 +224,7 @@ const Accounts = () => {
                     <button className="services-edit-icon-btn" onClick={() => openModal(index)}>
                       <Edit size={16} />
                     </button>
-                    <button className="services-delete-icon-btn" onClick={() => handleDelete(index)}>
+                    <button className="services-delete-icon-btn" onClick={() => handleDeleteAccount(user.id)}>
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -256,19 +296,28 @@ const Accounts = () => {
                 placeholder="Password"
                 value={newUser.password}
                 onChange={handleInputChange}
-                disabled={editingIndex !== null}
+
               />
               <select name="role" value={newUser.role} onChange={handleInputChange}>
                 <option value="">Select Role</option>
                 <option value="Admin">Admin</option>
-                <option value="Veterinarian/Staff">Veterinarian/Staff</option>
+                <option value="Veterinarian">Veterinarian/Staff</option>
                 <option value="User">User</option>
               </select>
             </div>
 
             <div className="accounts-modal-buttons">
-              <button className="accounts-primary-btn" onClick={handleAddAccount}>
-                {editingIndex !== null ? 'Update' : 'Add'}
+              <button
+                className="accounts-primary-btn"
+                onClick={() => {
+                  if (editingIndex !== null) {
+                    handleUpdate(users[editingIndex].id);  // pass id here
+                  } else {
+                    handleAddAccount();
+                  }
+                }}
+              >
+                {editingIndex !== null ? "Update" : "Add"}
               </button>
               <button className="accounts-cancel-btn" onClick={closeModal}>Cancel</button>
             </div>
