@@ -125,7 +125,6 @@ app.post("/data", (req, res) => {
       username: user.userName,
       email: user.email,
       phone: user.phoneNumber,
-      password: user.password,
       role: user.userRole,
       image: user.profile_Pic
         ? `data:image/jpeg;base64,${user.profile_Pic.toString("base64")}`
@@ -203,6 +202,10 @@ app.post('/add_account', async (req, res) => {
     console.error('Server error:', err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+app.post('/update_account_admin', async (req, res) => {
+
 });
 
 app.post('/login', (req, res) => {
