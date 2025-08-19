@@ -1,12 +1,22 @@
 // src/components/VetSidebar.jsx
-import React from "react";
+import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 import "./VetSidebar.css";
+import { UserContext } from "../../hook/authContext";
+import { useNavigate } from "react-router-dom";
 
 const VetSidebar = () => {
+  const { logout } = useContext(UserContext);
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    navigate("/");
+    logout();
+  }
+
+
   return (
     <aside className="vet-dashboard-sidebar">
-      <div className="vet-dashboard-logo">        
+      <div className="vet-dashboard-logo">
         Pawcare
       </div>
       <nav className="vet-dashboard-nav">
@@ -18,7 +28,7 @@ const VetSidebar = () => {
         <Link to="profile">Profile</Link>
         <Link to="online-consultation">Online Consultations</Link>
       </nav>
-      <button className="vet-dashboard-sign-out">Sign Out</button>
+      <button className="vet-dashboard-sign-out" onClick={handleLogout}>Sign Out</button>
     </aside>
   );
 };

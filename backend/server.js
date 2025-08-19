@@ -355,15 +355,146 @@ app.post('/delete_account', (req, res) => {
     const deleteSql = `DELETE FROM user_credentials WHERE id = ?`;
 
     db.query(deleteSql, [id], (err, result) => {
-    if (err) {
-      console.error('Deletion error:', err);
-      return res.status(500).json({ error: 'Internal server error' });
-    } else {
-      res.status(200).json({
-        message: 'Deletion Successful!',
+      if (err) {
+        console.error('Deletion error:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+      } else {
+        res.status(200).json({
+          message: 'Deletion Successful!',
+        });
+      }
+    })
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/update_profile", async (req, res) => {
+  try {
+    const {
+      id,
+      firstName,
+      middleName,
+      lastName,
+      suffix,
+      phone,
+      houseNumber,
+      province,
+      municipality,
+      barangay,
+      zipCode,
+      bio,
+      currentPassword,
+      newPassword,
+      password, // confirmation
+      image,
+    } = req.body;
+
+    if (!id) return res.status(400).json({ error: "User ID is required" });
+
+    // 📌 Fetch user
+    const [user] = await new Promise((resolve, reject) => {
+      db.query("SELECT * FROM user_credentials WHERE id = ?", [id], (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // 📌 Prepare updates
+    let updatesInfo = [];
+    let paramsInfo = [];
+
+    if (firstName !== undefined) { updatesInfo.push("firstName = ?"); paramsInfo.push(firstName); }
+    if (middleName !== undefined) { updatesInfo.push("middleName = ?"); paramsInfo.push(middleName); }
+    if (lastName !== undefined) { updatesInfo.push("lastName = ?"); paramsInfo.push(lastName); }
+    if (suffix !== undefined) { updatesInfo.push("suffix = ?"); paramsInfo.push(suffix); }
+    if (phone !== undefined) { updatesInfo.push("phoneNumber = ?"); paramsInfo.push(phone); }
+    if (houseNumber !== undefined) { updatesInfo.push("houseNum = ?"); paramsInfo.push(houseNumber); }
+    if (province !== undefined) { updatesInfo.push("province = ?"); paramsInfo.push(province); }
+    if (municipality !== undefined) { updatesInfo.push("municipality = ?"); paramsInfo.push(municipality); }
+    if (barangay !== undefined) { updatesInfo.push("barangay = ?"); paramsInfo.push(barangay); }
+    if (zipCode !== undefined) { updatesInfo.push("zipCode = ?"); paramsInfo.push(zipCode); }
+    if (bio !== undefined) { updatesInfo.push("bio = ?"); paramsInfo.push(bio); }
+
+    // 📌 Handle image update
+    if (image) {
+      const base64Data = image.replace(/^data:.+;base64,/, "");
+      const imageBuffer = Buffer.from(base64Data, "base64");
+      updatesInfo.push("profile_Pic = ?");
+      paramsInfo.push(imageBuffer);
+    }
+
+    paramsInfo.push(id);
+
+    // 📌 Password update only if provided
+    if (currentPassword && newPassword && password) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) return res.status(400).json({ error: "Current password is incorrect" });
+      if (newPassword !== password) return res.status(400).json({ error: "Passwords do not match" });
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await new Promise((resolve, reject) => {
+        db.query("UPDATE user_credentials SET password = ? WHERE id = ?", [hashedPassword, id], (err, results) => {
+          if (err) reject(err);
+          else resolve(results);
+        });
       });
     }
-    })
+
+    // 📌 Only run info update if something changed
+    if (updatesInfo.length > 0) {
+      const sql = `UPDATE user_infos SET ${updatesInfo.join(", ")} WHERE user_ID = ?`;
+      await new Promise((resolve, reject) => {
+        db.query(sql, paramsInfo, (err, results) => {
+          if (err) reject(err);
+          else resolve(results);
+        });
+      });
+    }
+
+    // 📌 Fetch updated user
+    const [updatedUser] = await new Promise((resolve, reject) => {
+      const fetchsql = `
+        SELECT uc.*, ui.firstName, ui.middleName, ui.lastName, ui.suffix,
+               ui.phoneNumber, ui.houseNum, ui.province, ui.municipality,
+               ui.barangay, ui.zipCode, ui.profile_Pic, ui.bio
+        FROM user_credentials AS uc
+        LEFT JOIN user_infos AS ui ON uc.id = ui.user_id
+        WHERE uc.id = ?`;
+      db.query(fetchsql, [id], (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    const userData = {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      username: updatedUser.userName,
+      role: updatedUser.userRole,
+      firstName: updatedUser.firstName,
+      middleName: updatedUser.middleName,
+      lastName: updatedUser.lastName,
+      suffix: updatedUser.suffix,
+      phone: updatedUser.phoneNumber,
+      houseNum: updatedUser.houseNum,
+      province: updatedUser.province,
+      municipality: updatedUser.municipality,
+      barangay: updatedUser.barangay,
+      zipCode: updatedUser.zipCode,
+      pic: updatedUser.profile_Pic ? Buffer.from(updatedUser.profile_Pic).toString("base64") : null,
+      bio: updatedUser.bio,
+    };
+
+    res.status(200).json({
+      success: true,
+      message: "Update successful",
+      user: userData,
+    });
+
   } catch (err) {
     console.error("Server error:", err);
     res.status(500).json({ error: "Server error" });

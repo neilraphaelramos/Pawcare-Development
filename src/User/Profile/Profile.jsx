@@ -5,38 +5,101 @@ import { UserContext } from "../../hook/authContext";
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(true);
   const [showImageModal, setShowImageModal] = useState(false);
-  const { user } = useContext(UserContext);
-
-  if (!user) return <p>Please log in.</p>;
+  const { user, setUser } = useContext(UserContext);
 
   const [formData, setFormData] = useState({
     firstName: user.firstName || "",
+    middleName: user.middleName || "",
     lastName: user.lastName || "",
+    suffix: user.suffix || "",
     email: user.email || "",
     phone: user.phone || "",
     bio: user.bio || "",
-    country: "Philippines" || "",
-    state: user.municipality || "",
-    postalCode: user.zipCode || "",
-    taxId: "TX123456789" || "",
+    houseNumber: user.houseNum || "",
+    province: user.province || "",
+    municipality: user.municipality || "",
+    barangay: user.barangay || "",
+    zipCode: user.zipCode || "",
     currentPassword: "" || "",
     newPassword: "",
-    confirmPassword: "" || "",
+    confirmPassword: "",
     profileImage: user.pic ? `data:image/jpeg;base64,${user.pic}` : null,
   });
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: files ? files[0] : value,
-    }));
+
+    if (name === "profileImage" && files && files[0]) {
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({
+          ...prev,
+          profileImage: reader.result, // preview (base64 string)
+          imageFile: file, // keep original file for backend
+        }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
-  const handleSubmit = (e) => {
+
+  /*const handleSubmit = (e) => {
     e.preventDefault();
     alert("Profile updated successfully!");
     setIsEditing(false);
+  };*/
+
+  const handleUpdateSumbit = async (e) => {
+    e.preventDefault();
+
+    try {
+      if (!window.confirm("You want to update your personal details?")) return;
+
+      const response = await fetch("http://localhost:5000/update_profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: user.id,
+          firstName: formData.firstName,
+          middleName: formData.middleName,
+          lastName: formData.lastName,
+          suffix: formData.suffix,
+          phone: formData.phone,
+          bio: formData.bio,
+          houseNumber: formData.houseNumber,
+          province: formData.province,
+          municipality: formData.municipality,
+          barangay: formData.barangay,
+          zipCode: formData.zipCode,
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+          password: formData.confirmPassword,
+          image: formData.profileImage
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(data.message);
+        setIsEditing(false);
+        setTimeout(() => {
+          setIsEditing(true);
+        }, 5000);
+        setUser(data.user);
+      } else {
+        alert(data.error || "Update failed");
+      }
+    } catch (err) {
+      console.error("Update error:", err);
+      alert("Server error.");
+    }
   };
 
   const toggleImageModal = () => setShowImageModal((prev) => !prev);
@@ -45,7 +108,7 @@ export default function Profile() {
     <div className="pf-profile">
       <h2 className="pf-profile__title">My Profile</h2>
 
-      <form onSubmit={handleSubmit} className="pf-profile__form">
+      <form onSubmit={handleUpdateSumbit} className="pf-profile__form">
         <div className="pf-profile__card pf-profile__card--header">
           <div className="pf-profile__avatar-section">
             <div className="pf-profile__avatar-wrapper">
@@ -53,7 +116,7 @@ export default function Profile() {
                 src={
                   formData.profileImage
                     ? formData.profileImage
-                    : "https://placehold.co/400"
+                    : "https://via.placeholder.com/100"
                 }
                 alt="avatar"
                 className="pf-profile__avatar-image"
@@ -95,11 +158,31 @@ export default function Profile() {
               />
             </div>
             <div className="pf-profile__input-group">
+              <label className="pf-profile__label">Middle Name</label>
+              <input
+                className="pf-profile__input"
+                name="middleName"
+                value={formData.middleName}
+                onChange={handleChange}
+                disabled={!isEditing}
+              />
+            </div>
+            <div className="pf-profile__input-group">
               <label className="pf-profile__label">Last Name</label>
               <input
                 className="pf-profile__input"
                 name="lastName"
                 value={formData.lastName}
+                onChange={handleChange}
+                disabled={!isEditing}
+              />
+            </div>
+            <div className="pf-profile__input-group">
+              <label className="pf-profile__label">Suffix</label>
+              <input
+                className="pf-profile__input"
+                name="suffix"
+                value={formData.suffix}
                 onChange={handleChange}
                 disabled={!isEditing}
               />
@@ -111,7 +194,7 @@ export default function Profile() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                disabled={!isEditing}
+                disabled
               />
             </div>
             <div className="pf-profile__input-group">
@@ -144,41 +227,51 @@ export default function Profile() {
           </div>
           <div className="pf-profile__card-body pf-profile__card-body--two-columns">
             <div className="pf-profile__input-group">
-              <label className="pf-profile__label">Country</label>
+              <label className="pf-profile__label">House Number</label>
               <input
                 className="pf-profile__input"
-                name="country"
-                value={formData.country}
+                name="houseNumber"
+                value={formData.houseNumber}
                 onChange={handleChange}
                 disabled={!isEditing}
               />
             </div>
             <div className="pf-profile__input-group">
-              <label className="pf-profile__label">City / State</label>
+              <label className="pf-profile__label">Province</label>
               <input
                 className="pf-profile__input"
-                name="state"
-                value={formData.state}
+                name="province"
+                value={formData.province}
                 onChange={handleChange}
                 disabled={!isEditing}
               />
             </div>
             <div className="pf-profile__input-group">
-              <label className="pf-profile__label">Postal Code</label>
+              <label className="pf-profile__label">Municipality</label>
               <input
                 className="pf-profile__input"
-                name="postalCode"
-                value={formData.postalCode}
+                name="municipality"
+                value={formData.municipality}
                 onChange={handleChange}
                 disabled={!isEditing}
               />
             </div>
             <div className="pf-profile__input-group">
-              <label className="pf-profile__label">Tax ID</label>
+              <label className="pf-profile__label">Barangay</label>
               <input
                 className="pf-profile__input"
-                name="taxId"
-                value={formData.taxId}
+                name="barangay"
+                value={formData.barangay}
+                onChange={handleChange}
+                disabled={!isEditing}
+              />
+            </div>
+            <div className="pf-profile__input-group">
+              <label className="pf-profile__label">Zip Code</label>
+              <input
+                className="pf-profile__input"
+                name="zipCode"
+                value={formData.zipCode}
                 onChange={handleChange}
                 disabled={!isEditing}
               />
