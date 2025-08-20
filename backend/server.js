@@ -4,6 +4,9 @@ const mysql = require('mysql');
 const bcrypt = require('bcrypt'); // 🔐 bcrypt for hashing
 const app = express();
 const port = 5000;
+const { OAuth2Client } = require('google-auth-library');
+const google_Client_ID = '1005622017132-od8o6vgodloqntbve3mba6anjn6v5v71.apps.googleusercontent.com';
+const CLIENT = new OAuth2Client(google_Client_ID)
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -498,6 +501,148 @@ app.post("/update_profile", async (req, res) => {
   } catch (err) {
     console.error("Server error:", err);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post('/auth/google', async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    const ticket = await CLIENT.verifyIdToken({
+      idToken: token,
+      audience: google_Client_ID,
+    });
+
+    const fetchsql = `
+    SELECT uc.*, ui.firstName, ui.middleName, ui.lastName, ui.suffix,
+           ui.phoneNumber, ui.houseNum, ui.province, ui.municipality,
+           ui.barangay, ui.zipCode, ui.profile_Pic, ui.bio
+    FROM user_credentials AS uc
+    LEFT JOIN user_infos AS ui
+      ON uc.id = ui.user_id
+    WHERE uc.email = ?
+  `;
+
+    const sql_informations = `
+      INSERT INTO user_infos
+      (user_id, firstName, lastName)
+      VALUES (?, ?, ?)
+    `;
+
+    const payload = ticket.getPayload();
+    let { email, given_name, family_name } = payload;
+    let username = email.split("@")[0];
+
+    if (!family_name) {
+      family_name = null;
+    }
+
+    const sqlCheck = 'SELECT * FROM user_credentials WHERE email = ?';
+    db.query(sqlCheck, [email], async (err, results) => {
+      if (err) {
+        console.error('DB error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      if (results.length > 0) {
+        db.query(fetchsql, [email], (err, results) => {
+          if (err) {
+            console.error('Login error:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+          }
+
+          if (results.length === 0) {
+            return res.status(401).json({ error: 'User Data Not Found' });
+          }
+
+          const user = results[0];
+
+          const userData = {
+            id: user.id,
+            email: user.email,
+            username: user.userName,
+            role: user.userRole,
+            firstName: user.firstName,
+            middleName: user.middleName,
+            lastName: user.lastName,
+            suffix: user.suffix,
+            phone: user.phoneNumber,
+            houseNum: user.houseNum,
+            province: user.province,
+            municipality: user.municipality,
+            barangay: user.barangay,
+            zipCode: user.zipCode,
+            pic: user.profile_Pic ? Buffer.from(user.profile_Pic).toString("base64") : null,
+            bio: user.bio,
+          };
+
+          return res.status(200).json({
+            message: 'Login successful',
+            user: userData
+          });
+        })
+      } else {
+        const sqlInsert = `
+          INSERT INTO user_credentials (userName, email, password)
+          VALUES (?, ?, ?)
+        `;
+        const hashedPassword = await bcrypt.hash('GOOGLE_AUTH', 10);
+
+        db.query(sqlInsert, [username, email, hashedPassword], (insertErr, result) => {
+          if (insertErr) {
+            console.error('Registration error:', insertErr);
+            return res.status(500).json({ error: 'Registration failed' });
+          }
+
+          db.query(sql_informations, [result.insertId, given_name, family_name], (err, results) => {
+            if (err) {
+              console.error('Registration error:', err);
+              return res.status(500).json({ error: 'Registration failed' });
+            }
+
+            db.query(fetchsql, [email], (err, results) => {
+              if (err) {
+                console.error('Login error:', err);
+                return res.status(500).json({ error: 'Internal server error' });
+              }
+
+              if (results.length === 0) {
+                return res.status(401).json({ error: 'User Data Not Found' });
+              }
+
+              const user = results[0];
+
+              const userData = {
+                id: user.id,
+                email: user.email,
+                username: user.userName,
+                role: user.userRole,
+                firstName: user.firstName,
+                middleName: user.middleName,
+                lastName: user.lastName,
+                suffix: user.suffix,
+                phone: user.phoneNumber,
+                houseNum: user.houseNum,
+                province: user.province,
+                municipality: user.municipality,
+                barangay: user.barangay,
+                zipCode: user.zipCode,
+                pic: user.profile_Pic ? Buffer.from(user.profile_Pic).toString("base64") : null,
+                bio: user.bio,
+              };
+
+              return res.status(200).json({
+                message: 'Registration successful',
+                user: userData
+              });
+            })
+          })
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(400).json({ error: 'Invalid Google token' });
   }
 });
 

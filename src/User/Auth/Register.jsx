@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom"; // ✅ Added useNavigate
 import axios from "axios";
 import "./Auth.css";
+import { GoogleLogin } from "@react-oauth/google";
+import { UserContext } from "../../hook/authContext";
 
 export default function Register() {
   const navigate = useNavigate();
   const [agree, setAgree] = useState(false);
+  const { setUser } = useContext(UserContext);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -148,6 +151,26 @@ export default function Register() {
     }
   };
 
+  const handleGoogleAuth = async (credentialResponse) => {
+    try {
+      const res = await axios.post("http://localhost:5000/auth/google", {
+        token: credentialResponse.credential,
+      });
+
+      console.log(res.data);
+      alert(res.data.message);
+      setUser(res.data.user);
+      navigate("/users");
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
+    }
+  };
+
+  const handleGoogleError = () => {
+    alert("Google Login Failed");
+  };
+
 
   return (
     <div className="login-container">
@@ -215,10 +238,11 @@ export default function Register() {
           <div className="divider"><span>Or continue with</span></div>
 
           <div className="social-login">
-            <button className="google">
-              <img src="https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png" alt="Google icon" className="icon" />
-              Google
-            </button>
+            <GoogleLogin
+              className="google"
+              onSuccess={handleGoogleAuth}
+              onError={handleGoogleError}
+            />
           </div>
 
           <p className="signup-text">

@@ -4,11 +4,12 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import "./Auth.css";
 import { UserContext } from "../../hook/authContext";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function Login() {
   const { setUser } = useContext(UserContext);
   const [form, setForm] = useState({
-    email: "", // use email if your backend login expects email
+    email: "",
     password: "",
   });
 
@@ -46,6 +47,26 @@ export default function Login() {
     } catch (error) {
       alert(error.response?.data?.error || "Login failed.");
     }
+  };
+
+  const handleGoogleAuth = async (credentialResponse) => {
+    try {
+      const res = await axios.post("http://localhost:5000/auth/google", {
+        token: credentialResponse.credential,
+      });
+
+      console.log(res.data);
+      alert(res.data.message);
+      setUser(res.data.user);
+      navigate("/users");
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
+    }
+  };
+
+  const handleGoogleError = () => {
+    alert("Google Login Failed");
   };
 
   return (
@@ -95,14 +116,11 @@ export default function Login() {
           </div>
 
           <div className="social-login">
-            <button className="google">
-              <img
-                src="https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png"
-                alt="Google icon"
-                className="icon"
-              />
-              Google
-            </button>
+            <GoogleLogin
+              className="google"
+              onSuccess={handleGoogleAuth}
+              onError={handleGoogleError}
+            />
           </div>
 
           <p className="signup-text">

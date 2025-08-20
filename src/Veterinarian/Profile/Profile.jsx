@@ -35,8 +35,8 @@ export default function Profile() {
       reader.onloadend = () => {
         setFormData((prev) => ({
           ...prev,
-          profileImage: reader.result, // preview (base64 string)
-          imageFile: file, // keep original file for backend
+          profileImage: reader.result,
+          imageFile: file, 
         }));
       };
       reader.readAsDataURL(file);
@@ -47,13 +47,6 @@ export default function Profile() {
       }));
     }
   };
-
-
-  /*const handleSubmit = (e) => {
-    e.preventDefault();
-    alert("Profile updated successfully!");
-    setIsEditing(false);
-  };*/
 
   const handleUpdateSumbit = async (e) => {
     e.preventDefault();
@@ -115,8 +108,6 @@ export default function Profile() {
               <img
                 src={
                   formData.profileImage
-                    ? formData.profileImage
-                    : "https://via.placeholder.com/100"
                 }
                 alt="avatar"
                 className="pf-profile__avatar-image"
@@ -335,8 +326,6 @@ export default function Profile() {
               className="pf-profile__modal-avatar"
               src={
                 formData.profileImage
-                  ? formData.profileImage
-                  : "https://via.placeholder.com/100"
               }
               alt="Current"
             />

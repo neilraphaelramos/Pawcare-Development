@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect } from "react";
+import { googleLogout } from "@react-oauth/google";
 
 export const UserContext = createContext();
 
@@ -30,6 +31,7 @@ export const UserProvider = ({ children }) => {
   }, [allUser]);
 
   const logout = () => {
+    googleLogout();
     setUser(null);
     setAllUser(null);
     console.log("User logged out");
