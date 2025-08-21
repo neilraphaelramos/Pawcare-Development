@@ -5,7 +5,6 @@ const bcrypt = require('bcrypt'); // 🔐 bcrypt for hashing
 const app = express();
 const port = 5000;
 const { OAuth2Client } = require('google-auth-library');
-const { data } = require('react-router-dom');
 const google_Client_ID = '1005622017132-od8o6vgodloqntbve3mba6anjn6v5v71.apps.googleusercontent.com';
 const CLIENT = new OAuth2Client(google_Client_ID)
 
