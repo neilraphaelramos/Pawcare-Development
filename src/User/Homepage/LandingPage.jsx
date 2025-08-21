@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import gsap from 'gsap';
 import { motion } from 'framer-motion';
 import HeroSection from './HeroSection'
@@ -8,9 +8,9 @@ import { Navigation } from "swiper/modules";
 import "swiper/css/navigation";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
+import axios from 'axios';
 import 'swiper/css';
 import 'swiper/css/pagination';
-import servicesData from "../../data/services.json";
 import featuresData from "../../data/features.json";
 
 import {
@@ -26,14 +26,14 @@ import {
 
 
 const iconMap = {
-  "camera": <FaCamera color="#26a0a0"/>,
-  "calendar": <FaCalendarAlt />,
-  "clipboard": <FaClipboardList />,
-  "bell": <FaBell />,
-  "chart": <FaChartBar />,
-  "pills": <FaPills />,
-  "box": <FaBox/>,
-  "robot": <FaRobot/>
+  "FaCamera": <FaCamera color="#26a0a0"/>,
+  "FaCalendarAlt": <FaCalendarAlt />,
+  "FaClipboardList": <FaClipboardList />,
+  "FaBell": <FaBell />,
+  "FaChartBar": <FaChartBar />,
+  "FaPills": <FaPills />,
+  "FaBox": <FaBox/>,
+  "FaRobot": <FaRobot/>
 };
 
 
@@ -49,6 +49,40 @@ function Hero() {
 
 // Main LandingPage
 export default function LandingPage() {
+  const [services, setServices] = useState([]);
+  const [features, setFeatures] = useState([]);
+
+  const fetchDataServices = async () => {
+    try {
+      const response = await axios.post("http://localhost:5000/fetch_services");
+
+      if (!Array.isArray(response.data)) {
+        console.error("Invalid response format from server.");
+        return;
+      }
+
+      setServices(response.data);
+    } catch (err) {
+      console.error("Error fetching services:", err);
+    }
+  };
+
+  const fetchFeatures = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/fetchFeatures");
+      if (res.data.success) {
+        setFeatures(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching features:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchDataServices();
+    fetchFeatures();
+  }, [])
+
   return (
     <div className="landing-page" id="home">
       <header className="navbar modern-navbar">
@@ -99,7 +133,7 @@ export default function LandingPage() {
         }}
         viewport={{ once: true }}
       >
-        {servicesData.map((service, index) => (
+        {services.map((service, index) => (
           <motion.div
           className="service-card"
           key={index}
@@ -151,7 +185,7 @@ export default function LandingPage() {
           viewport={{ once: true }}
         >
           <div className="features-grid">
-            {featuresData.map((feature, index) => (
+            {features.map((feature, index) => (
               <motion.div
                 className="feature-card"
                 key={index}

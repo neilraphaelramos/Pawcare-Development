@@ -1,47 +1,56 @@
 import React, { useEffect, useState } from "react";
-import featuresRaw from "../../data/features.json";
-import { Edit, Trash2 } from 'lucide-react';
+import axios from "axios";
+import { Edit, Trash2 } from "lucide-react";
 import * as FaIcons from "react-icons/fa";
 import "./Features.css";
 
 export default function Features() {
   const [features, setFeatures] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [editingFeature, setEditingFeature] = useState(null);
   const [form, setForm] = useState({ icon: "", title: "", description: "" });
   const [customIconName, setCustomIconName] = useState("");
   const [dynamicIcons, setDynamicIcons] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  
 
   const iconOptions = [
-  { label: "Bell", value: "FaBell", icon: FaIcons.FaBell },
-  { label: "Camera", value: "FaCamera", icon: FaIcons.FaCamera },
-  { label: "Calendar", value: "FaCalendarAlt", icon: FaIcons.FaCalendarAlt },
-  { label: "Clipboard", value: "FaClipboardList", icon: FaIcons.FaClipboardList },
-  { label: "Chart", value: "FaChartBar", icon: FaIcons.FaChartBar },
-  { label: "Pills", value: "FaPills", icon: FaIcons.FaPills },
-  { label: "Box", value: "FaBox", icon: FaIcons.FaBox },
-  { label: "Robot", value: "FaRobot", icon: FaIcons.FaRobot },
-];
-
-
+    { label: "Bell", value: "FaBell", icon: FaIcons.FaBell },
+    { label: "Camera", value: "FaCamera", icon: FaIcons.FaCamera },
+    { label: "Calendar", value: "FaCalendarAlt", icon: FaIcons.FaCalendarAlt },
+    { label: "Clipboard", value: "FaClipboardList", icon: FaIcons.FaClipboardList },
+    { label: "Chart", value: "FaChartBar", icon: FaIcons.FaChartBar },
+    { label: "Pills", value: "FaPills", icon: FaIcons.FaPills },
+    { label: "Box", value: "FaBox", icon: FaIcons.FaBox },
+    { label: "Robot", value: "FaRobot", icon: FaIcons.FaRobot },
+  ];
   const allIcons = [...iconOptions, ...dynamicIcons];
 
+  // 🔹 Read all features from backend
+  const fetchFeatures = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/fetchFeatures");
+      if (res.data.success) {
+        setFeatures(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching features:", err);
+    }
+  };
+
   useEffect(() => {
-    setFeatures(featuresRaw);
+    fetchFeatures();
   }, []);
 
-  const openModal = (index = null) => {
-    setEditingIndex(index);
-    setForm(index !== null ? features[index] : { icon: "", title: "", description: "" });
+  const openModal = (feature = null) => {
+    setEditingFeature(feature);
+    setForm(feature || { icon: "", title: "", description: "" });
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
     setForm({ icon: "", title: "", description: "" });
-    setEditingIndex(null);
+    setEditingFeature(null);
   };
 
   const handleInput = (e) => {
@@ -49,23 +58,32 @@ export default function Features() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
+  // 🔹 Save feature (Add or Update)
+  const handleSave = async () => {
     if (!form.icon || !form.title || !form.description) return;
 
-    const updated = [...features];
-    if (editingIndex !== null) {
-      updated[editingIndex] = form;
-    } else {
-      updated.push(form);
+    try {
+      if (editingFeature) {
+        await axios.put(`http://localhost:5000/update_features/${editingFeature.id}`, form);
+      } else {
+        await axios.post("http://localhost:5000/add_features", form);
+      }
+      fetchFeatures();
+      closeModal();
+    } catch (err) {
+      console.error("Error saving feature:", err);
     }
-    setFeatures(updated);
-    closeModal();
   };
 
-  const handleDelete = (index) => {
-    const updated = [...features];
-    updated.splice(index, 1);
-    setFeatures(updated);
+  // 🔹 Delete feature
+  const handleDelete = async (featureId) => {
+    if (!window.confirm("Are you sure you want to delete this feature?")) return;
+    try {
+      await axios.delete(`http://localhost:5000/delete_features/${featureId}`);
+      fetchFeatures();
+    } catch (err) {
+      console.error("Error deleting feature:", err);
+    }
   };
 
   const addCustomIcon = () => {
@@ -87,90 +105,70 @@ export default function Features() {
       <div className="features-header">
         <h2>Manage Features</h2>
         <div className="services-actions">
-        <input
-          type="text"
-          placeholder="Search by title or description..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="features-search-input"
-        />
-        <button className="features-primary-btn" onClick={() => openModal()}>Add Features</button>
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="features-search-input"
+          />
+          <button className="features-primary-btn" onClick={() => openModal()}>
+            Add Feature
+          </button>
+        </div>
       </div>
-    </div>
 
-  <div className="services-table-container">
-  <table className="inventory-table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Icon</th>
-        <th>Title</th>
-        <th>Description</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {features
-  .filter(f =>
-    f.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    f.description.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-  .map((f, index) => {
-    const iconKeyMap = {
-      camera: "FaCamera",
-      calendar: "FaCalendarAlt",
-      clipboard: "FaClipboardList",
-      bell: "FaBell",
-      chart: "FaChartBar",
-      pills: "FaPills",
-      box: "FaBox",
-      robot: "FaRobot",
-    };
-
-    const iconKey = iconKeyMap[f.icon] || f.icon;
-    const Icon = FaIcons[iconKey];
-    return (
-      <tr key={index}>
-        <td>{index + 1}</td>
-        <td className="icon-cell">{Icon && <Icon />}</td>
-        <td>{f.title}</td>
-        <td>{f.description}</td>
-        <td>
-          <button
-            className="features-edit-icon-btn"
-            onClick={() => openModal(index)}
-          >
-            <Edit size={16} />
-          </button>
-          <button
-            className="features-delete-icon-btn"
-            onClick={() => handleDelete(index)}
-          >
-            <Trash2 size={16} />
-          </button>
-        </td>
-      </tr>
-    );
-  })}
-    </tbody>
-  </table>
-</div>
-
+      <div className="services-table-container">
+        <table className="inventory-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Icon</th>
+              <th>Title</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {features
+              .filter((f) =>
+                f.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                f.description.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((f, index) => {
+                const Icon = FaIcons[f.icon];
+                return (
+                  <tr key={f.id}>
+                    <td>{index + 1}</td>
+                    <td className="icon-cell">{Icon && <Icon />}</td>
+                    <td>{f.title}</td>
+                    <td>{f.description}</td>
+                    <td>
+                      <button className="features-edit-icon-btn" onClick={() => openModal(f)}>
+                        <Edit size={16} />
+                      </button>
+                      <button className="features-delete-icon-btn" onClick={() => handleDelete(f.id)}>
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+      </div>
 
       {modalOpen && (
         <div className="features-modal-overlay">
           <div className="features-modal">
-            <h3>{editingIndex !== null ? "Edit Feature" : "Add Feature"}</h3>
+            <h3>{editingFeature ? "Edit Feature" : "Add Feature"}</h3>
 
-            <select
-              className="features-input-select"
-              name="icon"
-              value={form.icon}
-              onChange={handleInput}
-            >
+            <select className="features-input-select" name="icon" value={form.icon} onChange={handleInput}>
               <option value="">Select Icon</option>
               {allIcons.map((opt, i) => (
-                <option key={i} value={opt.value}>{opt.label}</option>
+                <option key={i} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
 
@@ -201,13 +199,17 @@ export default function Features() {
                 value={customIconName}
                 onChange={(e) => setCustomIconName(e.target.value)}
               />
-              <button className="features-btn-secondary" onClick={addCustomIcon}>Add Icon</button>
+              <button className="features-btn-secondary" onClick={addCustomIcon}>
+                Add Icon
+              </button>
             </div>
 
             <div className="features-modal-actions">
-              <button className="features-cancel-btn" onClick={closeModal}>Cancel</button>
+              <button className="features-cancel-btn" onClick={closeModal}>
+                Cancel
+              </button>
               <button className="features-primary-btn" onClick={handleSave}>
-                {editingIndex !== null ? "Update" : "Add"}
+                {editingFeature ? "Update" : "Add"}
               </button>
             </div>
           </div>

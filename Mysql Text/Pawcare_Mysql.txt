@@ -22,7 +22,7 @@ CREATE TABLE user_infos (
     municipality VARCHAR(50) NULL,
     barangay VARCHAR(50) NULL,
     zipCode VARCHAR(10) NULL,
-    profile_Pic BLOB NULL,
+    profile_Pic LONGBLOB NULL,
     bio TEXT NULL,
     
     CONSTRAINT fk_user
@@ -30,3 +30,17 @@ CREATE TABLE user_infos (
     	ON DELETE CASCADE
     	ON UPDATE CASCADE
 )
+
+CREATE TABLE services (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(50) NULL,
+    description TEXT NULL,
+    image LONGBLOB NULL
+);
+
+CREATE TABLE features (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(50) NULL,
+    description TEXT NULL,
+    icon VARCHAR(100) NULL
+);

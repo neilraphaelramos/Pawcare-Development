@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt'); // 🔐 bcrypt for hashing
 const app = express();
 const port = 5000;
 const { OAuth2Client } = require('google-auth-library');
+const { data } = require('react-router-dom');
 const google_Client_ID = '1005622017132-od8o6vgodloqntbve3mba6anjn6v5v71.apps.googleusercontent.com';
 const CLIENT = new OAuth2Client(google_Client_ID)
 
@@ -644,6 +645,158 @@ app.post('/auth/google', async (req, res) => {
     console.error('Google auth error:', error);
     res.status(400).json({ error: 'Invalid Google token' });
   }
+});
+
+app.post('/fetch_services', (req, res) => {
+  const fetchDataServicesSQL = `SELECT * FROM services`;
+
+  db.query(fetchDataServicesSQL, (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      return res.status(500).json({ error: "Database error" });
+    };
+
+    const servicesData = results.map((service) => ({
+      id: service.id,
+      title: service.title,
+      description: service.description,
+      image: service.image
+        ? `data:image/jpeg;base64,${service.image.toString("base64")}`
+        : null,
+    }));
+
+    res.json(servicesData);
+  })
+});
+
+app.post('/add_services', async (req, res) => {
+  const { title, description, image } = req.body;
+
+  if (!title || !description || !image) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
+
+  try {
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+
+    const insertSQL = "INSERT INTO services (title, description, image) VALUES (?, ?, ?)";
+    db.query(insertSQL, [title, description, buffer], (err, result) => {
+      if (err) {
+        console.error("Error inserting service:", err);
+        return res.status(500).json({ success: false, message: "Database error" });
+      }
+      res.json({ success: true, message: "Service added successfully", id: result.insertId });
+    });
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/update_services/:id', async (req, res) => {
+  const { id } = req.params;
+  const { title, description, image } = req.body;
+
+  if (!title || !description) {
+    return res.status(400).json({ success: false, message: "Title and description are required" });
+  }
+
+  try {
+    let updateSQL, values;
+
+    if (image) {
+      const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+      const buffer = Buffer.from(base64Data, "base64");
+
+      updateSQL = "UPDATE services SET title = ?, description = ?, image = ? WHERE id = ?";
+      values = [title, description, buffer, id];
+    } else {
+      updateSQL = "UPDATE services SET title = ?, description = ? WHERE id = ?";
+      values = [title, description, id];
+    }
+
+    db.query(updateSQL, values, (err, result) => {
+      if (err) {
+        console.error("Error updating service:", err);
+        return res.status(500).json({ success: false, message: "Database error" });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ success: false, message: "Service not found" });
+      }
+      res.json({ success: true, message: "Service updated successfully" });
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.delete('/delete_services/:id', (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const sql = `DELETE FROM services WHERE id = ?`;
+
+    db.query(sql, [id], (err, result) => {
+      if (err) {
+        console.error('Deletion error:', err);
+        return res.status(500).json({ success: false, error: 'Internal server error' });
+      } else {
+        return res.status(200).json({
+          success: true,
+          message: 'Deletion Successful!'
+        });
+      }
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+});
+
+app.get("/fetchFeatures", (req, res) => {
+  const sqlFeatures = `SELECT * FROM features`; 
+
+  db.query(sqlFeatures, (err, result) => {
+    if (err) {
+      console.error("Error fetching features:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    res.json({
+      success: true,
+      data: result
+    });
+  });
+});
+
+app.post("/add_features", (req, res) => {
+  const { icon, title, description } = req.body;
+  const sql = "INSERT INTO features (icon, title, description) VALUES (?, ?, ?)";
+  db.query(sql, [icon, title, description], (err, result) => {
+    if (err) return res.status(500).json({ success: false, error: err });
+    res.json({ success: true, id: result.insertId });
+  });
+});
+
+app.put("/update_features/:id", (req, res) => {
+  const { id } = req.params;
+  const { icon, title, description } = req.body;
+  const sql = "UPDATE features SET icon=?, title=?, description=? WHERE id=?";
+  db.query(sql, [icon, title, description, id], (err, result) => {
+    if (err) return res.status(500).json({ success: false, error: err });
+    res.json({ success: true });
+  });
+});
+
+app.delete("/delete_features/:id", (req, res) => {
+  const { id } = req.params;
+  const sql = "DELETE FROM features WHERE id=?";
+  db.query(sql, [id], (err, result) => {
+    if (err) return res.status(500).json({ success: false, error: err });
+    res.json({ success: true });
+  });
 });
 
 app.listen(port, () => {
