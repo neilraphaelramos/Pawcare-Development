@@ -44,3 +44,15 @@ CREATE TABLE features (
     description TEXT NULL,
     icon VARCHAR(100) NULL
 );
+
+CREATE TABLE inventory (
+    product_ID INT AUTO_INCREMENT PRIMARY KEY,
+    item_code VARCHAR(20) NOT NULL UNIQUE,
+    photo BLOB NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    item_group VARCHAR(20) NOT NULL,
+    date_purchase DATE,
+    date_expiration DATE,
+    stock INT NULL,
+    price DECIMAL(10,2) NULL
+);

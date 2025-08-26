@@ -202,7 +202,7 @@ const ViewOrders = () => {
     ))
   ) : (
     <tr>
-      <td colSpan="7" className="empty-message">No orders found.</td>
+      <td colSpan="8" className="empty-message">No orders found.</td>
     </tr>
   )}
 </tbody>

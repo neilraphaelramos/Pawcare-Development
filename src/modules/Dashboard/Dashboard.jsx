@@ -174,6 +174,10 @@ export default function Dashboard() {
   const [consultations, setConsultations] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [activeTab, setActiveTab] = useState("category");
+  const [todApp, setTodApp] = useState(0);
+  const [todPat, setTodPat] = useState(0);
+  const [medLow, setMedLow] = useState(0);
+  const [unMess, setUnMess] = useState(0);
 
   useEffect(() => {
       setAppointments([
@@ -316,19 +320,19 @@ export default function Dashboard() {
           <section className="admin-dashboard-metrics">
           <div className="admin-dashboard-metric">
             <div><FaStethoscope /> Today’s Appointments</div>
-            <span>12</span>
+            <span>{todApp}</span>
           </div>
           <div className="admin-dashboard-metric">
             <div><FaDog /> Total Patients</div>
-            <span>284</span>
+            <span>{todPat}</span>
           </div>
           <div className="admin-dashboard-metric">
             <div><FaPills /> Medications Low</div>
-            <span>5</span>
+            <span>{medLow}</span>
           </div>
           <div className="admin-dashboard-metric">
             <div><FaEnvelope /> Unread Messages</div>
-            <span>3</span>
+            <span>{unMess}</span>
           </div>
         </section>
 
