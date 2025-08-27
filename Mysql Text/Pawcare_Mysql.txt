@@ -54,5 +54,6 @@ CREATE TABLE inventory (
     date_purchase DATE,
     date_expiration DATE,
     stock INT NULL,
-    price DECIMAL(10,2) NULL
+    price DECIMAL(10,2) NULL,
+    unit VARCHAR(255) NOT NULL
 );
