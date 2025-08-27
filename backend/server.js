@@ -802,3 +802,110 @@ app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
 
+
+// ================= INVENTORY ROUTES =================
+
+// ================= INVENTORY ROUTES =================
+
+// Fetch all inventory items
+app.get("/fetch_inventory", (req, res) => {
+  const sql = "SELECT * FROM inventory";
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error fetching inventory:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+    res.json({ success: true, data: results });
+  });
+});
+
+// Add new inventory item
+app.post("/add_inventory", (req, res) => {
+  const { item_code, photo, name, item_group, date_purchase, date_expiration, stock, price, unit } = req.body;
+
+  if (!item_code || !name || !item_group || stock === undefined || price === undefined) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
+
+  const sql = `
+    INSERT INTO inventory 
+    (item_code, photo, name, item_group, date_purchase, date_expiration, stock, price, unit) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+  db.query(sql, [item_code, photo, name, item_group, date_purchase, date_expiration, stock, price, unit], (err, result) => {
+    if (err) {
+      console.error("Error adding inventory:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+    res.json({ success: true, id: result.insertId });
+  });
+});
+
+
+// Update inventory item
+// Update inventory item
+app.put("/update_inventory/:id", (req, res) => {
+  const { id } = req.params;
+  const {
+    item_code,
+    photo,
+    name,
+    item_group,
+    date_purchase,
+    date_expiration,
+    stock,
+    price,
+    unit
+  } = req.body;
+
+  console.log("🛠 Update Request:", { id, ...req.body }); // Debug log
+
+  const sql = `
+    UPDATE inventory 
+    SET item_code=?, photo=?, name=?, item_group=?, date_purchase=?, date_expiration=?, stock=?, price=?, unit=? 
+    WHERE product_ID=?
+  `;
+
+  db.query(
+    sql,
+    [
+      item_code || null,
+      photo || null,
+      name || null,
+      item_group || null,
+      date_purchase || null,
+      date_expiration || null,
+      stock || 0,
+      price || 0,
+      unit || null,
+      id
+    ],
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error updating inventory:", err);
+        return res.status(500).json({ success: false, error: "Database error" });
+      }
+      if (result.affectedRows === 0) {
+        console.warn("⚠️ No rows updated. Check if product_ID exists:", id);
+        return res.status(404).json({ success: false, message: "Item not found" });
+      }
+      console.log("✅ Update Success:", result);
+      res.json({ success: true });
+    }
+  );
+});
+
+
+
+// Delete inventory item
+app.delete("/delete_inventory/:id", (req, res) => {
+  const { id } = req.params;
+  const sql = "DELETE FROM inventory WHERE product_ID=?";
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("Error deleting inventory:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+    res.json({ success: true });
+  });
+});
