@@ -7,6 +7,10 @@ const port = 5000;
 const { OAuth2Client } = require('google-auth-library');
 const google_Client_ID = '1005622017132-od8o6vgodloqntbve3mba6anjn6v5v71.apps.googleusercontent.com';
 const CLIENT = new OAuth2Client(google_Client_ID)
+const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
+
+const APP_ID = "a579da1b44bb46d1b663ad2a750e7829";
+const APP_CERTIFICATE = "37258b251c2f4554ab7cc087976faba2";
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -123,7 +127,10 @@ app.post("/data", (req, res) => {
 
     const formattedUsers = result.map((user) => ({
       id: user.id,
-      fullName: `${user.firstName || ""} ${user.middleName || ""} ${user.lastName || ""} ${user.suffix || ""}`.trim(),
+      firstName: user.firstName,
+      middleName: user.middleName,
+      lastName: user.lastName,
+      suffix: user.suffix,
       username: user.userName,
       email: user.email,
       phone: user.phoneNumber,
@@ -140,19 +147,9 @@ app.post("/data", (req, res) => {
 });
 
 app.post('/add_account', async (req, res) => {
-  const { fullName, username, email, phone, password, role, image } = req.body;
+  const { firstName, middleName, lastName, suffix, username, email, phone, password, role, image } = req.body;
 
   try {
-    if (!fullName || fullName.trim() === "") {
-      return res.status(400).json({ error: "Full name is required" });
-    }
-
-    const parts = fullName.split("-").map(p => p.trim());
-    const firstName = parts[0] || "";
-    const middleName = parts[1] || "";
-    const lastName = parts[2] || "";
-    const suffix = parts[3] || "";
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
     let setRole;
@@ -206,19 +203,9 @@ app.post('/add_account', async (req, res) => {
 });
 
 app.post('/update_account_admin', async (req, res) => {
-  const { id, fullName, username, email, phone, password, role, image } = req.body;
+  const { id, firstName, middleName, lastName, suffix, username, email, phone, password, role, image } = req.body;
 
   try {
-    if (!fullName || fullName.trim() === "") {
-      return res.status(400).json({ error: "Full name is required" });
-    }
-
-    const parts = fullName.split("-").map(p => p.trim());
-    const firstName = parts[0] || "";
-    const middleName = parts[1] || "";
-    const lastName = parts[2] || "";
-    const suffix = parts[3] || "";
-
     let hashedPassword = null;
     if (password && password.trim() !== "") {
       hashedPassword = await bcrypt.hash(password, 10);
@@ -324,6 +311,25 @@ app.post('/login', (req, res) => {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
+      // Agora setup
+      const channelName = "mainChannel"; // or dynamic, like "user_" + user.id
+      const uid = user.id; // permanent user ID from DB
+      const role = RtcRole.PUBLISHER;
+
+      const expireTimeInSeconds = 3600; // 1 hour
+      const currentTime = Math.floor(Date.now() / 1000);
+      const privilegeExpireTime = currentTime + expireTimeInSeconds;
+
+      // Generate Agora RTC token
+      const token = RtcTokenBuilder.buildTokenWithUid(
+        APP_ID,
+        APP_CERTIFICATE,
+        channelName,
+        uid,
+        role,
+        privilegeExpireTime
+      );
+
       const userData = {
         id: user.id,
         email: user.email,
@@ -346,6 +352,12 @@ app.post('/login', (req, res) => {
       res.status(200).json({
         message: 'Login successful',
         user: userData,
+        agora: {
+          appId: APP_ID,
+          channel: channelName,
+          uid: uid,
+          token: token,
+        }
       });
     });
   });
@@ -755,7 +767,7 @@ app.delete('/delete_services/:id', (req, res) => {
 });
 
 app.get("/fetchFeatures", (req, res) => {
-  const sqlFeatures = `SELECT * FROM features`; 
+  const sqlFeatures = `SELECT * FROM features`;
 
   db.query(sqlFeatures, (err, result) => {
     if (err) {
@@ -798,15 +810,6 @@ app.delete("/delete_features/:id", (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
-
-
-// ================= INVENTORY ROUTES =================
-
-// ================= INVENTORY ROUTES =================
-
 // Fetch all inventory items
 app.get("/fetch_inventory", (req, res) => {
   const sql = "SELECT * FROM inventory";
@@ -841,8 +844,6 @@ app.post("/add_inventory", (req, res) => {
   });
 });
 
-
-// Update inventory item
 // Update inventory item
 app.put("/update_inventory/:id", (req, res) => {
   const { id } = req.params;
@@ -895,8 +896,6 @@ app.put("/update_inventory/:id", (req, res) => {
   );
 });
 
-
-
 // Delete inventory item
 app.delete("/delete_inventory/:id", (req, res) => {
   const { id } = req.params;
@@ -908,4 +907,8 @@ app.delete("/delete_inventory/:id", (req, res) => {
     }
     res.json({ success: true });
   });
+});
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });

@@ -9,7 +9,10 @@ const Accounts = () => {
   const [users, setUsers] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [newUser, setNewUser] = useState({
-    fullName: '',
+    firstName: '',
+    middleName: '',
+    lastName: '',
+    suffix: '',
     username: '',
     email: '',
     phone: '',
@@ -45,7 +48,10 @@ const Accounts = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id,
-          fullName: newUser.fullName,
+          firstName: newUser.firstName,
+          middleName: newUser.middleName,
+          lastName: newUser.lastName,
+          suffix: newUser.suffix,
           username: newUser.username,
           email: newUser.email,
           phone: newUser.phone,
@@ -215,7 +221,9 @@ const Accounts = () => {
                       <div className="inventory-img-thumb empty-avatar" />
                     )}
                   </td>
-                  <td>{user.fullName}</td>
+                  <td>
+                    {`${user.firstName || ""} ${user.middleName || ""} ${user.lastName || ""} ${user.suffix || ""}`.trim()}
+                  </td>
                   <td>{user.username}</td>
                   <td>{user.email}</td>
                   <td>{user.phone}</td>
@@ -264,9 +272,30 @@ const Accounts = () => {
             <div className="accounts-form-grid">
               <input
                 type="text"
-                name="fullName"
-                placeholder="Full Name"
-                value={newUser.fullName}
+                name="firstName"
+                placeholder="First Name"
+                value={newUser.firstName}
+                onChange={handleInputChange}
+              />
+              <input
+                type="text"
+                name="middleName"
+                placeholder="Middle Name"
+                value={newUser.middleName}
+                onChange={handleInputChange}
+              />
+              <input
+                type="text"
+                name="lastName"
+                placeholder="Last Name"
+                value={newUser.lastName}
+                onChange={handleInputChange}
+              />
+              <input
+                type="text"
+                name="suffix"
+                placeholder="Suffix"
+                value={newUser.suffix}
                 onChange={handleInputChange}
               />
               <input
