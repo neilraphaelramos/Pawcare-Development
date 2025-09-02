@@ -7,7 +7,7 @@ import { UserContext } from "../../hook/authContext";
 import { GoogleLogin } from "@react-oauth/google";
 
 export default function Login() {
-  const { setUser } = useContext(UserContext);
+  const { setUser, setAgoraData } = useContext(UserContext);
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -30,6 +30,8 @@ export default function Login() {
         const role = res.data.user.role;
 
         setUser(res.data.user);
+
+        setAgoraData(res.data.agora);
 
         alert(`Login successful! Role: ${role}`);
         console.log(res.data)

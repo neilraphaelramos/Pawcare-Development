@@ -9,6 +9,11 @@ export const UserProvider = ({ children }) => {
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
+  const [agoraData, setAgoraData] = useState(() => {
+    const storedAgoraData = localStorage.getItem("agoraData");
+    return storedAgoraData ? JSON.parse(storedAgoraData) : null;
+  });
+
   const [allUser, setAllUser] = useState(() => {
     const storedAllData = localStorage.getItem("userList");
     return storedAllData ? JSON.parse(storedAllData) : [];
@@ -23,12 +28,24 @@ export const UserProvider = ({ children }) => {
   }, [user]);
 
   useEffect(() => {
-    if (allUser) {
-      localStorage.setItem("userList", JSON.stringify(allUser));
+    if (agoraData) {
+      localStorage.setItem("agoraData", JSON.stringify(agoraData));
+    } else {
+      localStorage.removeItem("agoraData");
+    }
+  }, [agoraData]);
+
+  useEffect(() => {
+    if (user?.role === "Admin") {
+      if (allUser) {
+        localStorage.setItem("userList", JSON.stringify(allUser));
+      } else {
+        localStorage.removeItem("userList");
+      }
     } else {
       localStorage.removeItem("userList");
     }
-  }, [allUser]);
+  }, [allUser, user]);
 
   const logout = () => {
     googleLogout();
@@ -38,7 +55,7 @@ export const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, logout, setAllUser, allUser }}>
+    <UserContext.Provider value={{ user, setUser, logout, setAllUser, allUser, agoraData, setAgoraData }}>
       {children}
     </UserContext.Provider>
   );

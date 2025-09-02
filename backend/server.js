@@ -569,6 +569,24 @@ app.post('/auth/google', async (req, res) => {
 
           const user = results[0];
 
+          const channelName = "mainChannel"; // or dynamic, like "user_" + user.id
+          const uid = user.id; // permanent user ID from DB
+          const role = RtcRole.PUBLISHER;
+
+          const expireTimeInSeconds = 3600; // 1 hour
+          const currentTime = Math.floor(Date.now() / 1000);
+          const privilegeExpireTime = currentTime + expireTimeInSeconds;
+
+          // Generate Agora RTC token
+          const token = RtcTokenBuilder.buildTokenWithUid(
+            APP_ID,
+            APP_CERTIFICATE,
+            channelName,
+            uid,
+            role,
+            privilegeExpireTime
+          );
+
           const userData = {
             id: user.id,
             email: user.email,
@@ -590,7 +608,13 @@ app.post('/auth/google', async (req, res) => {
 
           return res.status(200).json({
             message: 'Login successful',
-            user: userData
+            user: userData,
+            agora: {
+              appId: APP_ID,
+              channel: channelName,
+              uid: uid,
+              token: token,
+            }
           });
         })
       } else {
@@ -655,6 +679,49 @@ app.post('/auth/google', async (req, res) => {
   } catch (error) {
     console.error('Google auth error:', error);
     res.status(400).json({ error: 'Invalid Google token' });
+  }
+});
+
+app.post('/online_consult', async (req, res) => {
+  const { owner_name, pet_name, pet_type, concern_description, consult_type, file_payment } = req.body;
+  const channel_consult_ID = "consult_" + Date.now();
+
+  try {
+    const sqlScript = `INSERT INTO online_consultation_table
+      (channel_consult_ID, Owner_name, pet_name, pet_type, 
+      payment_proof, concern_text, type_consult)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`
+
+    let fileBuffer = null;
+    if (file_payment) {
+      // Example: "data:application/pdf;base64,JVBERi0x..."
+      const base64Data = file_payment.replace(/^data:.*;base64,/, "");
+      fileBuffer = Buffer.from(base64Data, "base64");
+    }
+
+    db.query(sqlScript, [
+      channel_consult_ID,
+      owner_name,
+      pet_name,
+      pet_type,
+      fileBuffer,
+      concern_description,
+      consult_type
+    ], (err, result) => {
+      if (err) {
+        console.error("Error Uploading data:", err);
+        return res.status(500).json({ error: "Database error" });
+      }
+
+      res.json({
+        message: "Success",
+        success: true,
+        channel_consult_ID: channel_consult_ID
+      });
+    })
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
