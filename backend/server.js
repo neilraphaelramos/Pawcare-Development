@@ -683,42 +683,75 @@ app.post('/auth/google', async (req, res) => {
 });
 
 app.post('/online_consult', async (req, res) => {
-  const { owner_name, pet_name, pet_type, concern_description, consult_type, file_payment } = req.body;
+  const { owner_name, pet_name, pet_type, concern_description, consult_type, file_payment, file_type } = req.body;
   const channel_consult_ID = "consult_" + Date.now();
 
   try {
     const sqlScript = `INSERT INTO online_consultation_table
       (channel_consult_ID, Owner_name, pet_name, pet_type, 
-      payment_proof, concern_text, type_consult)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`
-
-    let fileBuffer = null;
-    if (file_payment) {
-      // Example: "data:application/pdf;base64,JVBERi0x..."
-      const base64Data = file_payment.replace(/^data:.*;base64,/, "");
-      fileBuffer = Buffer.from(base64Data, "base64");
-    }
+      payment_proof, concern_text, type_consult, fileType)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
     db.query(sqlScript, [
       channel_consult_ID,
       owner_name,
       pet_name,
       pet_type,
-      fileBuffer,
+      file_payment,        // store Base64 string directly
       concern_description,
-      consult_type
+      consult_type,
+      file_type            // store the type (pdf/image)
     ], (err, result) => {
       if (err) {
-        console.error("Error Uploading data:", err);
+        console.error("Error uploading data:", err);
         return res.status(500).json({ error: "Database error" });
       }
 
       res.json({
         message: "Success",
         success: true,
-        channel_consult_ID: channel_consult_ID
+        channel_consult_ID
       });
-    })
+    });
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/online_consult_fetch', (req, res) => {
+  const fetchOC = `SELECT * FROM online_consultation_table`;
+
+  try {
+    db.query(fetchOC, (err, results) => {
+      if (err) {
+        console.error("Error fetching data:", err);
+        return res.status(500).json({ error: "Database error" });
+      }
+
+      const formattedResults = results.map((item) => {
+        let fileBase64 = null;
+        if (item.payment_proof) {
+          const mimeType = item.fileType === 'pdf' ? 'application/pdf' : 'image/jpeg';
+          // ✅ just wrap it once
+          fileBase64 = `data:${mimeType};base64,${item.payment_proof}`;
+        }
+
+        return {
+          id: item.consult_id,
+          channelConsult: item.channel_consult_ID,
+          petName: item.pet_name,
+          petType: item.pet_type,
+          concern: item.concern_text,
+          consultationType: item.type_consult,
+          ownerName: item.Owner_name,
+          paymentProof: fileBase64
+        };
+      });
+
+
+      res.json({ fetchData: formattedResults });
+    });
   } catch (err) {
     console.error('Server error:', err);
     res.status(500).json({ error: 'Server error' });

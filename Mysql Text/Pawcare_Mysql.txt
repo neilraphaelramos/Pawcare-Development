@@ -67,5 +67,6 @@ CREATE TABLE online_consultation_table (
     payment_proof BLOB NOT NULL,
     concern_text TEXT not NULL,
     type_consult ENUM("urgent", "regular") NOT NULL
+fileType ENUM("pdf", "image") NOT NULL
 );
 

@@ -1,8 +1,9 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { FaPaperPlane } from 'react-icons/fa';
+import React, { useState, useContext } from 'react';
+import { FaPaperPlane, FaVideo } from 'react-icons/fa';
 import './OnlineConsultation.css';
 import { UserContext } from '../../hook/authContext';
 import axios from 'axios';
+import JitsiMeeting from './component/jitsiApi'; // <-- we’ll create this file
 
 const OnlineConsultation = () => {
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -11,11 +12,10 @@ const OnlineConsultation = () => {
     { from: 'bot', text: '👋 Hello! Thank you for submitting your consultation request.' },
     { from: 'bot', text: 'Please wait while one of our licensed veterinarians reviews your concern.' }
   ]);
-  const { agoraData, user } = useContext(UserContext);
-  const [ channelConsultID, setChannelConsultID ] = useState();
-  const APP_ID = agoraData.appId;
-  const token = agoraData.token;
-  const uid = agoraData.uid;
+  const [channelConsultID, setChannelConsultID] = useState();
+  const [startCall, setStartCall] = useState(false);
+
+  const { user } = useContext(UserContext);
 
   const fullName = {
     first: user.firstName,
@@ -35,7 +35,7 @@ const OnlineConsultation = () => {
     concern_description: "",
     consult_type: "",
     file_payment: '',
-  })
+  });
 
   const handleInputChange = (e) => {
     setFillUp({ ...fillUp, [e.target.name]: e.target.value });
@@ -47,8 +47,14 @@ const OnlineConsultation = () => {
       const reader = new FileReader();
 
       reader.onloadend = () => {
-        const base64String = reader.result;
+        // reader.result is something like:
+        // "data:application/pdf;base64,JVBERi0xLjQKJ...(base64 content)"
+        const fullDataURL = reader.result;
 
+        // split into 2 parts -> ["data:application/pdf;base64", "JVBERi0xLjQKJ..."]
+        const base64String = fullDataURL.split(",")[1]; // ✅ raw base64 only
+
+        // detect file type
         let fileType = "";
         if (file.type === "application/pdf") {
           fileType = "pdf";
@@ -58,35 +64,34 @@ const OnlineConsultation = () => {
           fileType = "unknown";
         }
 
+        // update state
         setFillUp((prev) => ({
           ...prev,
-          file_payment: base64String, 
-          file_type: fileType,     
+          file_payment: base64String, // ✅ only base64, no "data:..." prefix
+          file_type: fileType,
         }));
       };
 
-      reader.readAsDataURL(file); 
+      reader.readAsDataURL(file);
     }
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    console.log(fillUp)
 
     try {
       const res = await axios.post("http://localhost:5000/online_consult", fillUp);
       if (!res.data.success) {
         setFormSubmitted(false);
       } else {
-        alert(res.data.message)
+        alert(res.data.message);
         const consultID = res.data.channel_consult_ID;
-
-        setChannelConsultID(consultID)
+        setChannelConsultID(consultID);
         setFormSubmitted(true);
       }
     } catch (err) {
-      console.error("Error requesting consultation:", err)
+      console.error("Error requesting consultation:", err);
     }
   };
 
@@ -154,7 +159,6 @@ const OnlineConsultation = () => {
             </div>
           </div>
 
-
           <div className="form-group">
             <label>Payment Proof (Screenshot or Receipt)</label>
             <input
@@ -165,7 +169,6 @@ const OnlineConsultation = () => {
             />
           </div>
 
-
           <div className="form-group full-width">
             <button className="user-dashboard-primary-btn" type="submit">
               Submit Consultation Request
@@ -173,35 +176,65 @@ const OnlineConsultation = () => {
           </div>
         </form>
       ) : (
-        <div className="chat-section">
-          <div className="chat-box">
-            {messages.map((msg, index) => (
-              <div key={index} className={`chat-message-wrapper ${msg.from}`}>
-                <img
-                  src={
-                    msg.from === 'bot'
-                      ? 'https://i.ibb.co/GtY8N6t/vet-avatar.png'
-                      : 'https://i.ibb.co/YQhfXpq/user-avatar.png'
-                  }
-                  alt={msg.from}
-                  className="chat-avatar"
-                />
-                <div className={`chat-message ${msg.from}`}>{msg.text}</div>
+        <>
+          {!startCall ? (
+            <div className="chat-section">
+              <div className="chat-box">
+                {messages.map((msg, index) => (
+                  <div key={index} className={`chat-message-wrapper ${msg.from}`}>
+                    <img
+                      src={
+                        msg.from === 'bot'
+                          ? 'https://i.ibb.co/GtY8N6t/vet-avatar.png'
+                          : 'https://i.ibb.co/YQhfXpq/user-avatar.png'
+                      }
+                      alt={msg.from}
+                      className="chat-avatar"
+                    />
+                    <div className={`chat-message ${msg.from}`}>{msg.text}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="chat-input-row">
-            <input
-              type="text"
-              placeholder="Type your message..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              <div className="chat-input-row">
+                <input
+                  type="text"
+                  placeholder="Type your message..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                />
+                <button onClick={handleSendMessage}>
+                  <FaPaperPlane />
+                </button>
+                <button
+                  className="call-btn"
+                  onClick={() => setStartCall(true)}
+                >
+                  <FaVideo /> Start Call
+                </button>
+              </div>
+            </div>
+          ) : (
+            <JitsiMeeting
+              roomName={channelConsultID}
+              displayName={processName}
+              email={user.email}
+              onApiReady={(api) => {
+                console.log("Jitsi API Ready", api);
+
+                // Example: Send welcome chat in Jitsi
+                api.executeCommand("sendChatMessage", "👋 Hello doctor!");
+
+                // Listen for incoming Jitsi chat messages
+                api.addEventListener("incomingMessage", (event) => {
+                  setMessages((prev) => [
+                    ...prev,
+                    { from: "bot", text: event.message },
+                  ]);
+                });
+              }}
             />
-            <button onClick={handleSendMessage}>
-              <FaPaperPlane />
-            </button>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
