@@ -1,9 +1,9 @@
-import React, { useState, useContext } from 'react';
-import { FaPaperPlane, FaVideo } from 'react-icons/fa';
+import React, { useState, useContext, useEffect } from 'react';
+import { FaPaperPlane, FaVideo, FaRegWindowClose } from 'react-icons/fa';
 import './OnlineConsultation.css';
 import { UserContext } from '../../hook/authContext';
 import axios from 'axios';
-import JitsiMeeting from './component/jitsiApi'; // <-- we’ll create this file
+import JitsiWrapper from './component/jitsiApi'; // <-- we’ll create this file
 
 const OnlineConsultation = () => {
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -47,12 +47,8 @@ const OnlineConsultation = () => {
       const reader = new FileReader();
 
       reader.onloadend = () => {
-        // reader.result is something like:
-        // "data:application/pdf;base64,JVBERi0xLjQKJ...(base64 content)"
         const fullDataURL = reader.result;
-
-        // split into 2 parts -> ["data:application/pdf;base64", "JVBERi0xLjQKJ..."]
-        const base64String = fullDataURL.split(",")[1]; // ✅ raw base64 only
+        const base64String = fullDataURL.split(",")[1];
 
         // detect file type
         let fileType = "";
@@ -67,7 +63,7 @@ const OnlineConsultation = () => {
         // update state
         setFillUp((prev) => ({
           ...prev,
-          file_payment: base64String, // ✅ only base64, no "data:..." prefix
+          file_payment: base64String,
           file_type: fileType,
         }));
       };
@@ -89,11 +85,38 @@ const OnlineConsultation = () => {
         const consultID = res.data.channel_consult_ID;
         setChannelConsultID(consultID);
         setFormSubmitted(true);
+
+        sessionStorage.setItem("channelConsultID", consultID);
+        sessionStorage.setItem("isSubmitted", JSON.stringify(true));
       }
     } catch (err) {
       console.error("Error requesting consultation:", err);
     }
   };
+
+  useEffect(() => {
+    const dataConsult = sessionStorage.getItem("channelConsultID");
+    const isSubmitted = JSON.parse(sessionStorage.getItem('isSubmitted') || 'false');
+    const dataSetCall = JSON.parse(sessionStorage.getItem('startCall') || 'false');
+    setChannelConsultID(dataConsult);
+    setStartCall(dataSetCall);
+    setFormSubmitted(isSubmitted);
+  }, [])
+
+  const handleOpenCall = () => {
+    setStartCall(true);
+    sessionStorage.setItem("startCall", JSON.stringify(true));
+  }
+
+  const handleCloseCall = () => {
+    sessionStorage.removeItem("channelConsultID");
+    sessionStorage.removeItem("isSubmitted");
+    sessionStorage.removeItem("startCall");
+
+    setChannelConsultID(null);
+    setStartCall(false);
+    setFormSubmitted(false);
+  }
 
   const handleSendMessage = () => {
     if (message.trim() === '') return;
@@ -178,61 +201,71 @@ const OnlineConsultation = () => {
       ) : (
         <>
           {!startCall ? (
-            <div className="chat-section">
-              <div className="chat-box">
-                {messages.map((msg, index) => (
-                  <div key={index} className={`chat-message-wrapper ${msg.from}`}>
-                    <img
-                      src={
-                        msg.from === 'bot'
-                          ? 'https://i.ibb.co/GtY8N6t/vet-avatar.png'
-                          : 'https://i.ibb.co/YQhfXpq/user-avatar.png'
-                      }
-                      alt={msg.from}
-                      className="chat-avatar"
-                    />
-                    <div className={`chat-message ${msg.from}`}>{msg.text}</div>
-                  </div>
-                ))}
+            <>
+              <div className='box-close-call'>
+                <FaRegWindowClose className='btn-close-call' onClick={handleCloseCall} />
               </div>
-              <div className="chat-input-row">
-                <input
-                  type="text"
-                  placeholder="Type your message..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                />
-                <button onClick={handleSendMessage}>
-                  <FaPaperPlane />
-                </button>
-                <button
-                  className="call-btn"
-                  onClick={() => setStartCall(true)}
-                >
-                  <FaVideo /> Start Call
-                </button>
+              <div className="chat-section">
+                <div className="chat-box">
+                  {messages.map((msg, index) => (
+                    <div key={index} className={`chat-message-wrapper ${msg.from}`}>
+                      <img
+                        src={
+                          msg.from === 'bot'
+                            ? 'https://i.ibb.co/GtY8N6t/vet-avatar.png'
+                            : `data:image/png;base64,${user.pic}`
+                        }
+                        alt={msg.from}
+                        className="chat-avatar"
+                      />
+                      <div className={`chat-message ${msg.from}`}>{msg.text}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="chat-input-row">
+                  <input
+                    type="text"
+                    placeholder="Type your message..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                  />
+                  <button onClick={handleSendMessage}>
+                    <FaPaperPlane />
+                  </button>
+                  <button
+                    className="call-btn"
+                    onClick={() => handleOpenCall()}
+                  >
+                    <FaVideo />
+                  </button>
+                </div>
               </div>
-            </div>
+            </>
           ) : (
-            <JitsiMeeting
-              roomName={channelConsultID}
-              displayName={processName}
-              email={user.email}
-              onApiReady={(api) => {
-                console.log("Jitsi API Ready", api);
+            <>
+              <div className='box-close-call'>
+                <FaRegWindowClose className='btn-close-call' onClick={handleCloseCall} />
+              </div>
+              <JitsiWrapper
+                roomName={`vpaas-magic-cookie-d26ed00354e841dbabe6a987da039e25/${channelConsultID}`}
+                displayName={processName}
+                email={user.email}
+                onApiReady={(api) => {
+                  console.log("Jitsi API Ready", api);
 
-                // Example: Send welcome chat in Jitsi
-                api.executeCommand("sendChatMessage", "👋 Hello doctor!");
+                  // Example: Send welcome chat in Jitsi
+                  api.executeCommand("sendChatMessage", "👋 Hello doctor!");
 
-                // Listen for incoming Jitsi chat messages
-                api.addEventListener("incomingMessage", (event) => {
-                  setMessages((prev) => [
-                    ...prev,
-                    { from: "bot", text: event.message },
-                  ]);
-                });
-              }}
-            />
+                  // Listen for incoming Jitsi chat messages
+                  api.addEventListener("incomingMessage", (event) => {
+                    setMessages((prev) => [
+                      ...prev,
+                      { from: "bot", text: event.message },
+                    ]);
+                  });
+                }}
+              />
+            </>
           )}
         </>
       )}

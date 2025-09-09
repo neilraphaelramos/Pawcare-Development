@@ -5,7 +5,7 @@ const JitsiWrapper = ({ roomName, displayName, email, jwt, onApiReady }) => {
   return (
     <div style={{ height: "600px", width: "100%" }}>
       <JitsiMeeting
-        domain="8x8.vc" 
+        domain="8x8.vc"
         roomName={roomName}
         jwt={jwt} 
         configOverwrite={{

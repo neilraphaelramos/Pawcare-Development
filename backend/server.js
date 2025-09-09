@@ -2,15 +2,17 @@ const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql');
 const bcrypt = require('bcrypt'); // 🔐 bcrypt for hashing
+const jwt = require("jsonwebtoken");
+const fs = require("fs");
 const app = express();
 const port = 5000;
 const { OAuth2Client } = require('google-auth-library');
 const google_Client_ID = '1005622017132-od8o6vgodloqntbve3mba6anjn6v5v71.apps.googleusercontent.com';
 const CLIENT = new OAuth2Client(google_Client_ID)
-const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
 
-const APP_ID = "a579da1b44bb46d1b663ad2a750e7829";
-const APP_CERTIFICATE = "37258b251c2f4554ab7cc087976faba2";
+const PRIVATE_KEY = fs.readFileSync("./private_key.pk", "utf8");
+const JITSI_APP_ID = 'vpaas-magic-cookie-d26ed00354e841dbabe6a987da039e25';
+const JITSI_APP_API_KEY = 'vpaas-magic-cookie-d26ed00354e841dbabe6a987da039e25/ac1c10'; 
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -276,7 +278,7 @@ app.post('/update_account_admin', async (req, res) => {
   }
 });
 
-app.post('/login', (req, res) => {
+app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
   const sql = `
@@ -291,44 +293,26 @@ app.post('/login', (req, res) => {
 
   db.query(sql, [email], (err, results) => {
     if (err) {
-      console.error('Login error:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("[DB ERROR]", err);
+      return res.status(500).json({ error: "Internal server error" });
     }
-
     if (results.length === 0) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      console.warn("[LOGIN] No user found with email:", email);
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     const user = results[0];
+    console.log("[LOGIN] User found:", user.email, "Role:", user.userRole);
 
     bcrypt.compare(password, user.password, (bcryptErr, isMatch) => {
       if (bcryptErr) {
-        console.error('Bcrypt error:', bcryptErr);
-        return res.status(500).json({ error: 'Internal server error' });
+        console.error("[BCRYPT ERROR]", bcryptErr);
+        return res.status(500).json({ error: "Internal server error" });
       }
-
       if (!isMatch) {
-        return res.status(401).json({ error: 'Invalid email or password' });
+        console.warn("[LOGIN] Wrong password for:", email);
+        return res.status(401).json({ error: "Invalid email or password" });
       }
-
-      // Agora setup
-      const channelName = "mainChannel"; // or dynamic, like "user_" + user.id
-      const uid = user.id; // permanent user ID from DB
-      const role = RtcRole.PUBLISHER;
-
-      const expireTimeInSeconds = 3600; // 1 hour
-      const currentTime = Math.floor(Date.now() / 1000);
-      const privilegeExpireTime = currentTime + expireTimeInSeconds;
-
-      // Generate Agora RTC token
-      const token = RtcTokenBuilder.buildTokenWithUid(
-        APP_ID,
-        APP_CERTIFICATE,
-        channelName,
-        uid,
-        role,
-        privilegeExpireTime
-      );
 
       const userData = {
         id: user.id,
@@ -348,16 +332,54 @@ app.post('/login', (req, res) => {
         pic: user.profile_Pic ? Buffer.from(user.profile_Pic).toString("base64") : null,
         bio: user.bio,
       };
+      
+      let jitsiToken = null;
+      if (user.userRole === "Veterinarian") {
+        console.log("[JITSI] Generating token for vet:", user.email);
+        console.log("[JITSI] ENV APP_ID:", JITSI_APP_ID);
+        console.log("[JITSI] ENV API_KEY:", JITSI_APP_API_KEY);
+        console.log("[JITSI] PRIVATE_KEY exists?", !!PRIVATE_KEY);
+
+        try {
+          const payload = {
+            aud: "jitsi",
+            iss: "chat",
+            sub: JITSI_APP_ID,
+            room: "*",
+            context: {
+              user: {
+                id: user.id,
+                name: `${user.firstName} ${user.lastName}`,
+                email: user.email,
+                moderator: "true",
+              },
+              features: {
+                livestreaming: "true",
+                recording: "true",
+                transcription: "true",
+              },
+            },
+            exp: Math.floor(Date.now() / 1000) + 3 * 60 * 60, // 3 hours
+            nbf: Math.floor(Date.now() / 1000) - 10,
+          };
+
+          console.log("[JITSI] Payload:", JSON.stringify(payload, null, 2));
+
+          jitsiToken = jwt.sign(payload, PRIVATE_KEY, {
+            algorithm: "RS256",
+            header: { kid: JITSI_APP_API_KEY },
+          });
+
+          console.log("[JITSI] Token generated successfully");
+        } catch (jwtErr) {
+          console.error("[JITSI ERROR] Failed to sign token:", jwtErr);
+        }
+      }
 
       res.status(200).json({
-        message: 'Login successful',
+        message: "Login successful",
         user: userData,
-        agora: {
-          appId: APP_ID,
-          channel: channelName,
-          uid: uid,
-          token: token,
-        }
+        jitsiToken,
       });
     });
   });
@@ -569,24 +591,6 @@ app.post('/auth/google', async (req, res) => {
 
           const user = results[0];
 
-          const channelName = "mainChannel"; // or dynamic, like "user_" + user.id
-          const uid = user.id; // permanent user ID from DB
-          const role = RtcRole.PUBLISHER;
-
-          const expireTimeInSeconds = 3600; // 1 hour
-          const currentTime = Math.floor(Date.now() / 1000);
-          const privilegeExpireTime = currentTime + expireTimeInSeconds;
-
-          // Generate Agora RTC token
-          const token = RtcTokenBuilder.buildTokenWithUid(
-            APP_ID,
-            APP_CERTIFICATE,
-            channelName,
-            uid,
-            role,
-            privilegeExpireTime
-          );
-
           const userData = {
             id: user.id,
             email: user.email,
@@ -609,12 +613,7 @@ app.post('/auth/google', async (req, res) => {
           return res.status(200).json({
             message: 'Login successful',
             user: userData,
-            agora: {
-              appId: APP_ID,
-              channel: channelName,
-              uid: uid,
-              token: token,
-            }
+            jitsiToken,
           });
         })
       } else {
@@ -684,7 +683,7 @@ app.post('/auth/google', async (req, res) => {
 
 app.post('/online_consult', async (req, res) => {
   const { owner_name, pet_name, pet_type, concern_description, consult_type, file_payment, file_type } = req.body;
-  const channel_consult_ID = "consult_" + Date.now();
+  const channel_consult_ID = "consult" + Date.now();
 
   try {
     const sqlScript = `INSERT INTO online_consultation_table

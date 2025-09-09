@@ -9,9 +9,9 @@ export const UserProvider = ({ children }) => {
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  const [agoraData, setAgoraData] = useState(() => {
-    const storedAgoraData = localStorage.getItem("agoraData");
-    return storedAgoraData ? JSON.parse(storedAgoraData) : null;
+  const [tokenData, setTokenData] = useState(() => {
+    const storedTokenData = localStorage.getItem("token");
+    return storedTokenData ? JSON.parse(storedTokenData) : null;
   });
 
   const [allUser, setAllUser] = useState(() => {
@@ -28,12 +28,12 @@ export const UserProvider = ({ children }) => {
   }, [user]);
 
   useEffect(() => {
-    if (agoraData) {
-      localStorage.setItem("agoraData", JSON.stringify(agoraData));
+    if (tokenData) {
+      localStorage.setItem("token", JSON.stringify(tokenData));
     } else {
-      localStorage.removeItem("agoraData");
+      localStorage.removeItem("token");
     }
-  }, [agoraData]);
+  }, [tokenData]);
 
   useEffect(() => {
     if (user?.role === "Admin") {
@@ -51,11 +51,12 @@ export const UserProvider = ({ children }) => {
     googleLogout();
     setUser(null);
     setAllUser(null);
+    setTokenData(null);
     console.log("User logged out");
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, logout, setAllUser, allUser, agoraData, setAgoraData }}>
+    <UserContext.Provider value={{ user, setUser, logout, setAllUser, allUser, tokenData, setTokenData }}>
       {children}
     </UserContext.Provider>
   );
