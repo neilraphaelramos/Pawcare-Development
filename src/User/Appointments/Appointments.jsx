@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import './Appointments.css';
+import axios from 'axios';
+import { UserContext } from "../../hook/authContext";
 
 const generateTimeSlots = () => {
   const start = new Date();
@@ -35,6 +37,8 @@ const Appointment = () => {
   const [selectedTime, setSelectedTime] = useState('');
   const [isAM, setIsAM] = useState(false);
   const { am, pm } = generateTimeSlots();
+  const { user } = useContext(UserContext);
+  const [bookedTimes, setBookedTimes] = useState([]);
 
   const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -55,12 +59,38 @@ const Appointment = () => {
     }
   };
 
-  const handleReserve = () => {
-    alert(`Appointment reserved on ${selectedDate?.toDateString()} at ${selectedTime}`);
-    setSelectedDate(null);
-    setSelectedTime('');
-    setIsAM(false);
-    setCurrentDate(new Date());
+  useEffect(() => {
+    if (selectedDate) {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      axios.get(`http://localhost:5000/appointments/${dateStr}`)
+        .then(res => setBookedTimes(res.data))
+        .catch(err => console.error(err));
+    }
+  }, [selectedDate]);
+
+  const handleReserve = async () => {
+    if (!selectedDate || !selectedTime) return alert("Please select date and time");
+
+    const owner_name = `${user?.firstName || ''} ${user?.middleName || ''} ${user?.lastName || ''} ${user?.suffix || ''}`.trim();
+
+    const data = {
+      set_date: selectedDate.toISOString().split('T')[0], // YYYY-MM-DD
+      set_time: selectedTime,
+      owner_name: owner_name,
+      user_id: user.id,
+    };
+
+    try {
+      const res = await axios.post('http://localhost:5000/appointments', data);
+      alert(`Appointment reserved on ${res.data.message}`);
+      setSelectedDate(null);
+      setSelectedTime('');
+      setIsAM(false);
+      setCurrentDate(new Date());
+    } catch (err) {
+      console.error(err);
+      alert("Error reserving appointment");
+    }
   };
 
   const daysInMonth = Array.from({ length: endOfMonth.getDate() }, (_, i) => i + 1);
@@ -121,15 +151,18 @@ const Appointment = () => {
           <button onClick={() => setIsAM(false)}>&gt;</button>
         </div>
         <div className="time-grid">
-          {(isAM ? am : pm).map((slot, i) => (
-            <button
-              key={i}
-              className={`time-slot ${selectedTime === slot ? 'selected' : ''}`}
-              onClick={() => setSelectedTime(slot)}
-            >
-              {slot}
-            </button>
-          ))}
+          {(isAM ? am : pm)
+            .filter(slot => !bookedTimes.includes(slot)) // remove booked slots
+            .map((slot, i) => (
+              <button
+                key={i}
+                className={`time-slot ${selectedTime === slot ? 'selected' : ''}`}
+                onClick={() => setSelectedTime(slot)}
+              >
+                {slot}
+              </button>
+            ))
+          }
         </div>
       </div>
     </div>

@@ -1167,6 +1167,46 @@ app.delete("/delete_inventory/:id", (req, res) => {
   });
 });
 
+app.post('/appointments', (req, res) => {
+  const { set_date, set_time, owner_name, user_id } = req.body;
+
+  const sql = `INSERT INTO appointments_tables (set_date, set_time, owner_name, UID) VALUES (?, ?, ?, ?)`;
+  db.query(sql, [set_date, set_time, owner_name, user_id], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: `${set_date} at ${set_time}`});
+  });
+});
+
+app.get('/appointments/:date', (req, res) => {
+  const { date } = req.params; // date in YYYY-MM-DD
+  const sql = 'SELECT set_time FROM appointments_tables WHERE set_date = ?';
+  db.query(sql, [date], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    // Return an array of booked time strings
+    const bookedTimes = results.map(r => r.set_time);
+    res.json(bookedTimes);
+  });
+});
+
+app.get('/appointmentsvets/:date', (req, res) => {
+  const { date } = req.params; // expects YYYY-MM-DD
+  const sql = 'SELECT * FROM appointments_tables WHERE set_date = ?';
+  db.query(sql, [date], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results); // array of appointments
+  });
+});
+
+app.put('/appointments/:id/status', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; // 'Approved' or 'Declined'
+  const sql = 'UPDATE appointments_tables SET status = ? WHERE id_appoint = ?';
+  db.query(sql, [status, id], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Status updated' });
+  });
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

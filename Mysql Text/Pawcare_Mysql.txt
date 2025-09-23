@@ -70,3 +70,11 @@ CREATE TABLE online_consultation_table (
 fileType ENUM("pdf", "image") NOT NULL
 );
 
+CREATE TABLE appointments_tables (
+	id_appoint int AUTO_INCREMENT NOT NULL,
+    set_time VARCHAR(200) not null,
+    set_date DATE not null,
+    owner_name VARCHAR(100) not null,
+    PRIMARY KEY(id_appoint)
+);
+

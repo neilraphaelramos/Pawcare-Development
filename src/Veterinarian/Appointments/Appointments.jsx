@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Appointments.css';
-import appointmentsData from '../../data/appointments.json';
+import axios from 'axios';
 
 const generateTimeSlots = () => {
   const start = new Date();
@@ -35,7 +35,7 @@ const Appointment = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [isAM, setIsAM] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [localData, setLocalData] = useState(JSON.parse(JSON.stringify(appointmentsData))); // Local state copy
+  const [appointments, setAppointments] = useState([]);
 
   const { am, pm } = generateTimeSlots();
 
@@ -52,6 +52,8 @@ const Appointment = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
+  const selectedAppointment = appointments.find(a => a.set_time === selectedSlot);
+
   const selectDate = (day) => {
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     if (newDate >= today.setHours(0, 0, 0, 0)) {
@@ -60,24 +62,25 @@ const Appointment = () => {
     }
   };
 
-  const formattedDate = selectedDate
-  ? selectedDate.toLocaleDateString('en-CA')
-  : null;
+  const updateStatus = (id, status) => {
+    axios.put(`http://localhost:5000/appointments/${id}/status`, { status })
+      .then(() => {
+        setAppointments(prev => prev.map(a => a.id_appoint === id ? { ...a, status } : a));
+      })
+      .catch(err => console.error(err));
+  };
 
-
-  const reservations = localData[formattedDate] || {};
-  const reservationDetails = selectedSlot ? reservations[selectedSlot] : null;
-
- const updateStatus = (status) => {
-  if (!formattedDate || !selectedSlot || !reservationDetails) return;
-
-  const updatedData = { ...localData };
-  if (!updatedData[formattedDate][selectedSlot]) return;
-
-  updatedData[formattedDate][selectedSlot].status = status;
-  setLocalData(updatedData);
-};
-
+  useEffect(() => {
+    if (selectedDate) {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      axios.get(`http://localhost:5000/appointmentsvets/${dateStr}`)
+        .then(res => {
+          console.log('Appointments fetched:', res.data); // check this output
+          setAppointments(res.data);
+        })
+        .catch(err => console.error(err));
+    }
+  }, [selectedDate]);
 
   return (
     <div className="appointment-container">
@@ -125,43 +128,37 @@ const Appointment = () => {
 
             <div className="time-grid">
               {(isAM ? am : pm).map((slot, i) => {
+                const appointment = appointments.find(a => a.set_time === slot);
                 const isSelected = slot === selectedSlot;
                 return (
                   <div
                     key={i}
-                    className={`time-slot ${isSelected ? 'selected-slot' : ''}`}
+                    className={`time-slot ${isSelected ? 'selected-slot' : ''} ${appointment ? 'booked' : ''}`}
                     onClick={() => setSelectedSlot(slot)}
                   >
-                    {slot}
+                    {slot} {appointment ? `(${appointment.owner_name})` : ''}
                   </div>
                 );
               })}
             </div>
-<div className="reservation-list">
-  <h5>Reservation Details</h5>
-  {reservationDetails ? (
-    <div className="reservation-card">
-      <div>
-        <strong>{reservationDetails.owner}</strong><br />
-        Time: {selectedSlot}<br />
-        <div>
-          Status: <span className="status-text">
-            {reservationDetails.status || 'Pending'}
-          </span>
-        </div>
-      </div>
-      <div className="action-buttons">
-        <button className="approve" onClick={() => updateStatus('Approved')}>Approve</button>
-        <button className="decline" onClick={() => updateStatus('Declined')}>Decline</button>
-      </div>
-    </div>
-  ) : (
-    <p>No reservation for this time slot.</p>
-  )}
-</div>
-
-
-
+            <div className="reservation-list">
+              <h5>Reservation Details</h5>
+              {selectedAppointment ? (
+                <div className="reservation-card">
+                  <div>
+                    <strong>{selectedAppointment.owner_name}</strong><br />
+                    Time: {selectedSlot}<br />
+                    Status: {selectedAppointment.status || 'Pending'}
+                  </div>
+                  <div className="action-buttons">
+                    <button className="approve" onClick={() => updateStatus(selectedAppointment.id_appoint, 'Approved')}>Approve</button>
+                    <button className="decline" onClick={() => updateStatus(selectedAppointment.id_appoint, 'Declined')}>Decline</button>
+                  </div>
+                </div>
+              ) : (
+                <p>No reservation for this time slot.</p>
+              )}
+            </div>
           </>
         )}
       </div>

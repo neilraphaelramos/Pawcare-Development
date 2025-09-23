@@ -126,6 +126,11 @@
   font-weight: 600;
 }
 
+.time-slot.booked {
+  background-color: #f8d7da;
+  cursor: not-allowed;
+}
+
 .approve {
   background-color: #32b2b2;
 }
