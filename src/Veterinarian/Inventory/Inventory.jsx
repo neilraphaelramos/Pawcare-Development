@@ -12,7 +12,7 @@ const generateItemCode = (group = 'X') => {
 
 // CSV export helper (unchanged)
 function exportToCSV(data) {
-  const headers = ['Item Code', 'Item Name', 'Item Group', 'Last Purchase', 'Expiration','Price', 'Stocks'];
+  const headers = ['Item Code', 'Item Name', 'Item Group', 'Last Purchase', 'Expiration', 'Price', 'Stocks'];
   const rows = data.map(item => [
     item.code,
     item.name,
@@ -22,13 +22,13 @@ function exportToCSV(data) {
     item.price,
     item.stock,
   ]);
-  
+
   let csvContent = 'data:text/csv;charset=utf-8,';
   csvContent += headers.join(',') + '\r\n';
   rows.forEach(row => {
     csvContent += row.join(',') + '\r\n';
   });
-  
+
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement('a');
   link.setAttribute('href', encodedUri);
@@ -39,6 +39,7 @@ function exportToCSV(data) {
 }
 
 const API_BASE = "http://localhost:5000";
+
 
 export default function InventoryTable() {
   // keep your initial dummy data but we will replace it with DB data on mount
@@ -67,21 +68,27 @@ export default function InventoryTable() {
     try { return JSON.parse(desc); } catch { return {}; }
   };
 
-  const mapRowToUIItem = (row) => {
-  return {
-    id: row.product_ID,
-    code: row.item_code,
-    photo: row.photo || "",
-    name: row.name || "",
-    group: row.item_group || "",
-    date: row.date_purchase ? new Date(row.date_purchase).toISOString().split("T")[0] : "",
-    expiration: row.date_expiration ? new Date(row.date_expiration).toISOString().split("T")[0] : "",
-    price: row.price ? `₱ ${Number(row.price).toFixed(2)}` : "",
-    unit: row.unit || "",
-    stock: row.stock ?? 0,
-    low: row.stock !== null && row.stock < 5, // optional: flag for low stock
+  const getPhotoUrl = (photo) => {
+    if (!photo) return "";
+    if (photo.startsWith("http") || photo.startsWith("data:")) return photo;
+    return `${API_BASE}/uploads/${photo}`;
   };
-};
+
+  const mapRowToUIItem = (row) => {
+    return {
+      id: row.product_ID,
+      code: row.item_code,
+      photo: row.photo || "",
+      name: row.name || "",
+      group: row.item_group || "",
+      date: row.date_purchase ? new Date(row.date_purchase).toISOString().split("T")[0] : "",
+      expiration: row.date_expiration ? new Date(row.date_expiration).toISOString().split("T")[0] : "",
+      price: row.price ? `₱ ${Number(row.price).toFixed(2)}` : "",
+      unit: row.unit || "",
+      stock: row.stock ?? 0,
+      low: row.stock !== null && row.stock < 5, // optional: flag for low stock
+    };
+  };
 
 
   const fetchInventory = async () => {
@@ -90,6 +97,7 @@ export default function InventoryTable() {
       if (res.data?.success && Array.isArray(res.data.data)) {
         const mapped = res.data.data.map(mapRowToUIItem);
         setInventoryData(mapped);
+        console.table(mapped);
       }
     } catch (err) {
       console.error("Error fetching inventory:", err);
@@ -102,27 +110,27 @@ export default function InventoryTable() {
 
   // ---- UI handlers (keep your design/UX) ----
   const handleEdit = (index) => {
-  const item = inventoryData[index];
+    const item = inventoryData[index];
 
-  const priceInput = typeof item.price === "string"
-    ? item.price.replace(/[₱,\s]/g, "")
-    : item.price;
+    const priceInput = typeof item.price === "string"
+      ? item.price.replace(/[₱,\s]/g, "")
+      : item.price;
 
-  setNewItem({
-    id: item.id,
-    code: item.code,
-    photo: item.photo,
-    name: item.name,
-    group: item.group,
-    date: item.date,
-    expiration: item.expiration,
-    stock: item.stock,
-    unit: item.unit,
-    price: priceInput,
-  });
-  setEditingIndex(index);
-  setShowAddModal(true);
-};
+    setNewItem({
+      id: item.id,
+      code: item.code,
+      photo: item.photo,
+      name: item.name,
+      group: item.group,
+      date: item.date,
+      expiration: item.expiration,
+      stock: item.stock,
+      unit: item.unit,
+      price: priceInput,
+    });
+    setEditingIndex(index);
+    setShowAddModal(true);
+  };
 
 
   const handleDelete = async (index) => {
@@ -141,11 +149,16 @@ export default function InventoryTable() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Store the actual File object for potential upload
+    setNewItem((prev) => ({ ...prev, photoFile: file }));
+
+    // Create a preview URL using FileReader
     const reader = new FileReader();
     reader.onloadend = () => {
-      setNewItem((prevItem) => ({ ...prevItem, photo: reader.result }));
+      setNewItem((prev) => ({ ...prev, photoPreview: reader.result }));
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(file); // Converts file to Base64 string for preview
   };
 
   useEffect(() => {
@@ -192,37 +205,54 @@ export default function InventoryTable() {
   };
 
   const buildPayloadFromNewItem = () => {
-  const quantity = sanitizeNumber(newItem.stock);
-  const price = sanitizeNumber(newItem.price);
+    const quantity = sanitizeNumber(newItem.stock);
+    const price = sanitizeNumber(newItem.price);
 
-  return {
-    item_code: newItem.code,
-    photo: newItem.photo,   // base64 image
-    name: newItem.name,
-    item_group: newItem.group,
-    date_purchase: newItem.date,
-    date_expiration: newItem.expiration,
-    stock: quantity === '' ? 0 : quantity,
-    price: price === '' ? 0 : price,
-    unit: newItem.unit,
+    return {
+      item_code: newItem.code,
+      photo: newItem.photo,   // base64 image
+      name: newItem.name,
+      item_group: newItem.group,
+      date_purchase: newItem.date,
+      date_expiration: newItem.expiration,
+      stock: quantity === '' ? 0 : quantity,
+      price: price === '' ? 0 : price,
+      unit: newItem.unit,
+    };
   };
-};
 
 
   // Add/Update item to DB (preserve your validation + UX)
   const handleAddItem = async () => {
     if (
-      newItem.code && newItem.photo && newItem.name &&
+      newItem.code && newItem.photoFile && newItem.name &&
       newItem.group && newItem.date && newItem.stock && newItem.price
     ) {
-      const payload = buildPayloadFromNewItem();
+      const quantity = sanitizeNumber(newItem.stock);
+      const price = sanitizeNumber(newItem.price);
+
+      // Build FormData instead of JSON
+      const formData = new FormData();
+      formData.append('item_code', newItem.code);
+      formData.append('photo', newItem.photoFile); // actual file
+      formData.append('name', newItem.name);
+      formData.append('item_group', newItem.group);
+      formData.append('date_purchase', newItem.date);
+      formData.append('date_expiration', newItem.expiration);
+      formData.append('stock', quantity === '' ? 0 : quantity);
+      formData.append('price', price === '' ? 0 : price);
+      formData.append('unit', newItem.unit);
 
       try {
         if (editingIndex !== null) {
           const editingItem = inventoryData[editingIndex];
-          await axios.put(`${API_BASE}/update_inventory/${editingItem.id}`, payload);
+          await axios.put(`${API_BASE}/update_inventory/${editingItem.id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
         } else {
-          await axios.post(`${API_BASE}/add_inventory`, payload);
+          await axios.post(`${API_BASE}/add_inventory`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
         }
 
         // Refresh & reset
@@ -230,7 +260,7 @@ export default function InventoryTable() {
         setNewItem({
           id: undefined,
           code: '',
-          photo: '',
+          photoFile: null,
           name: '',
           group: '',
           date: '',
@@ -350,7 +380,7 @@ export default function InventoryTable() {
               <td>{item.code}</td>
               <td>
                 <img
-                  src={item.photo}
+                  src={getPhotoUrl(item.photo)}
                   alt={item.name}
                   style={{
                     width: '50px',
@@ -404,10 +434,26 @@ export default function InventoryTable() {
                   className="admin-inventory-image-upload"
                   onClick={() => document.getElementById('image-upload').click()}
                 >
-                  {newItem.photo ? (
-                    <img src={newItem.photo} alt="Uploaded" className="admin-inventory-uploaded-image" />
+                  {newItem.photoPreview ? (
+                    <img
+                      src={newItem.photoPreview}
+                      alt="Preview"
+                      className="admin-inventory-uploaded-image"
+                    />
+                  ) : newItem.photo ? (
+                    // fallback: show existing photo if editing an item
+                    <img
+                      src={getPhotoUrl(newItem.photo)}
+                      alt="Existing"
+                      className="admin-inventory-uploaded-image"
+                    />
                   ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="admin-inventory-upload-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="admin-inventory-upload-icon"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
                       <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm1 3a1 1 0 112 0 1 1 0 01-2 0zM3 15l4-5 3 4 4-6 5 7H3z" />
                     </svg>
                   )}

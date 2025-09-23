@@ -121,19 +121,19 @@ const Dashboard = () => {
         <section className="user-dashboard-metrics">
           <div className="user-dashboard-metric">
             <div><FaPaw /> Total Pets</div>
-            <span>2</span>
+            <span>{0}</span>
           </div>
           <div className="user-dashboard-metric">
             <div><FaCalendarAlt /> Appointments</div>
-            <span>14</span>
+            <span>{0}</span>
           </div>
           <div className="user-dashboard-metric">
             <div><FaBell /> Notifications</div>
-            <span>5</span>
+            <span>{0}</span>
           </div>
           <div className="user-dashboard-metric">
             <div><FaUserMd /> Active Vets</div>
-            <span>5</span>
+            <span>{0}</span>
           </div>
         </section>
 

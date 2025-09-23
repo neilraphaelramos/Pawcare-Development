@@ -7,16 +7,35 @@ const fs = require("fs");
 const app = express();
 const port = 5000;
 const { OAuth2Client } = require('google-auth-library');
+const multer = require('multer');
 const google_Client_ID = '1005622017132-od8o6vgodloqntbve3mba6anjn6v5v71.apps.googleusercontent.com';
 const CLIENT = new OAuth2Client(google_Client_ID)
 
+const path = require('path');
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './tmp/uploads/');
+  },
+  filename: function (req, file, cb) {
+    // Keep original extension
+    const ext = path.extname(file.originalname);
+    const name = file.fieldname + '-' + Date.now() + ext;
+    cb(null, name);
+  }
+});
+
+const upload = multer({ storage: storage });
+
 const PRIVATE_KEY = fs.readFileSync("./private_key.pk", "utf8");
 const JITSI_APP_ID = 'vpaas-magic-cookie-d26ed00354e841dbabe6a987da039e25';
-const JITSI_APP_API_KEY = 'vpaas-magic-cookie-d26ed00354e841dbabe6a987da039e25/ac1c10'; 
+const JITSI_APP_API_KEY = 'vpaas-magic-cookie-d26ed00354e841dbabe6a987da039e25/ac1c10';
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use('/uploads', express.static('tmp/uploads'));
+app.use("/uploads", express.static(path.join(__dirname, "tmp/uploads")));
 
 // MySQL connection
 const db = mysql.createConnection({
@@ -332,7 +351,7 @@ app.post("/login", (req, res) => {
         pic: user.profile_Pic ? Buffer.from(user.profile_Pic).toString("base64") : null,
         bio: user.bio,
       };
-      
+
       let jitsiToken = null;
       if (user.userRole === "Veterinarian") {
         console.log("[JITSI] Generating token for vet:", user.email);
@@ -610,6 +629,49 @@ app.post('/auth/google', async (req, res) => {
             bio: user.bio,
           };
 
+          let jitsiToken = null;
+          if (user.userRole === "Veterinarian") {
+            console.log("[JITSI] Generating token for vet:", user.email);
+            console.log("[JITSI] ENV APP_ID:", JITSI_APP_ID);
+            console.log("[JITSI] ENV API_KEY:", JITSI_APP_API_KEY);
+            console.log("[JITSI] PRIVATE_KEY exists?", !!PRIVATE_KEY);
+
+            try {
+              const payload = {
+                aud: "jitsi",
+                iss: "chat",
+                sub: JITSI_APP_ID,
+                room: "*",
+                context: {
+                  user: {
+                    id: user.id,
+                    name: `${user.firstName} ${user.lastName}`,
+                    email: user.email,
+                    moderator: "true",
+                  },
+                  features: {
+                    livestreaming: "true",
+                    recording: "true",
+                    transcription: "true",
+                  },
+                },
+                exp: Math.floor(Date.now() / 1000) + 3 * 60 * 60, // 3 hours
+                nbf: Math.floor(Date.now() / 1000) - 10,
+              };
+
+              console.log("[JITSI] Payload:", JSON.stringify(payload, null, 2));
+
+              jitsiToken = jwt.sign(payload, PRIVATE_KEY, {
+                algorithm: "RS256",
+                header: { kid: JITSI_APP_API_KEY },
+              });
+
+              console.log("[JITSI] Token generated successfully");
+            } catch (jwtErr) {
+              console.error("[JITSI ERROR] Failed to sign token:", jwtErr);
+            }
+          }
+
           return res.status(200).json({
             message: 'Login successful',
             user: userData,
@@ -666,9 +728,53 @@ app.post('/auth/google', async (req, res) => {
                 bio: user.bio,
               };
 
+              let jitsiToken = null;
+              if (user.userRole === "Veterinarian") {
+                console.log("[JITSI] Generating token for vet:", user.email);
+                console.log("[JITSI] ENV APP_ID:", JITSI_APP_ID);
+                console.log("[JITSI] ENV API_KEY:", JITSI_APP_API_KEY);
+                console.log("[JITSI] PRIVATE_KEY exists?", !!PRIVATE_KEY);
+
+                try {
+                  const payload = {
+                    aud: "jitsi",
+                    iss: "chat",
+                    sub: JITSI_APP_ID,
+                    room: "*",
+                    context: {
+                      user: {
+                        id: user.id,
+                        name: `${user.firstName} ${user.lastName}`,
+                        email: user.email,
+                        moderator: "true",
+                      },
+                      features: {
+                        livestreaming: "true",
+                        recording: "true",
+                        transcription: "true",
+                      },
+                    },
+                    exp: Math.floor(Date.now() / 1000) + 3 * 60 * 60, // 3 hours
+                    nbf: Math.floor(Date.now() / 1000) - 10,
+                  };
+
+                  console.log("[JITSI] Payload:", JSON.stringify(payload, null, 2));
+
+                  jitsiToken = jwt.sign(payload, PRIVATE_KEY, {
+                    algorithm: "RS256",
+                    header: { kid: JITSI_APP_API_KEY },
+                  });
+
+                  console.log("[JITSI] Token generated successfully");
+                } catch (jwtErr) {
+                  console.error("[JITSI ERROR] Failed to sign token:", jwtErr);
+                }
+              }
+
               return res.status(200).json({
                 message: 'Registration successful',
-                user: userData
+                user: userData,
+                jitsiToken,
               });
             })
           })
@@ -922,8 +1028,9 @@ app.get("/fetch_inventory", (req, res) => {
 });
 
 // Add new inventory item
-app.post("/add_inventory", (req, res) => {
-  const { item_code, photo, name, item_group, date_purchase, date_expiration, stock, price, unit } = req.body;
+app.post("/add_inventory", upload.single('photo'), (req, res) => {
+  const { item_code, name, item_group, date_purchase, date_expiration, stock, price, unit } = req.body;
+  const photo = req.file ? req.file.filename : null; // now includes extension
 
   if (!item_code || !name || !item_group || stock === undefined || price === undefined) {
     return res.status(400).json({ success: false, message: "Missing required fields" });
@@ -944,67 +1051,119 @@ app.post("/add_inventory", (req, res) => {
 });
 
 // Update inventory item
-app.put("/update_inventory/:id", (req, res) => {
+app.put("/update_inventory/:id", upload.single("photo"), (req, res) => {
   const { id } = req.params;
   const {
     item_code,
-    photo,
     name,
     item_group,
     date_purchase,
     date_expiration,
     stock,
     price,
-    unit
+    unit,
   } = req.body;
 
-  console.log("🛠 Update Request:", { id, ...req.body }); // Debug log
+  const newPhoto = req.file ? req.file.filename : null;
 
-  const sql = `
-    UPDATE inventory 
-    SET item_code=?, photo=?, name=?, item_group=?, date_purchase=?, date_expiration=?, stock=?, price=?, unit=? 
-    WHERE product_ID=?
-  `;
-
-  db.query(
-    sql,
-    [
-      item_code || null,
-      photo || null,
-      name || null,
-      item_group || null,
-      date_purchase || null,
-      date_expiration || null,
-      stock || 0,
-      price || 0,
-      unit || null,
-      id
-    ],
-    (err, result) => {
-      if (err) {
-        console.error("❌ Error updating inventory:", err);
-        return res.status(500).json({ success: false, error: "Database error" });
-      }
-      if (result.affectedRows === 0) {
-        console.warn("⚠️ No rows updated. Check if product_ID exists:", id);
-        return res.status(404).json({ success: false, message: "Item not found" });
-      }
-      console.log("✅ Update Success:", result);
-      res.json({ success: true });
+  // Step 1: Get the old photo first
+  db.query("SELECT photo FROM inventory WHERE product_ID = ?", [id], (err, rows) => {
+    if (err) {
+      console.error("❌ Error fetching old photo:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
     }
-  );
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Item not found" });
+    }
+
+    const oldPhoto = rows[0].photo;
+
+    // Step 2: If new file uploaded, delete the old one
+    if (newPhoto && oldPhoto) {
+      const oldPath = path.join(__dirname, "tmp/uploads", oldPhoto);
+      fs.unlink(oldPath, (err) => {
+        if (err) {
+          console.warn("⚠️ Could not delete old photo:", oldPath, err.message);
+        } else {
+          console.log("🗑 Deleted old photo:", oldPath);
+        }
+      });
+    }
+
+    // Step 3: Update DB (use new photo if uploaded, otherwise keep old one)
+    const photoToSave = newPhoto || oldPhoto;
+
+    const sql = `
+      UPDATE inventory 
+      SET item_code=?, photo=?, name=?, item_group=?, date_purchase=?, date_expiration=?, stock=?, price=?, unit=? 
+      WHERE product_ID=?
+    `;
+
+    db.query(
+      sql,
+      [
+        item_code || null,
+        photoToSave || null,
+        name || null,
+        item_group || null,
+        date_purchase || null,
+        date_expiration || null,
+        stock || 0,
+        price || 0,
+        unit || null,
+        id,
+      ],
+      (err, result) => {
+        if (err) {
+          console.error("❌ Error updating inventory:", err);
+          return res.status(500).json({ success: false, error: "Database error" });
+        }
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ success: false, message: "Item not found" });
+        }
+        res.json({ success: true, message: "Item updated", photo: photoToSave });
+      }
+    );
+  });
 });
 
 // Delete inventory item
 app.delete("/delete_inventory/:id", (req, res) => {
   const { id } = req.params;
-  const sql = "DELETE FROM inventory WHERE product_ID=?";
-  db.query(sql, [id], (err, result) => {
+
+  // Step 1: Fetch the photo filename first
+  db.query("SELECT photo FROM inventory WHERE product_ID = ?", [id], (err, rows) => {
     if (err) {
-      console.error("Error deleting inventory:", err);
+      console.error("❌ Error fetching photo for delete:", err);
       return res.status(500).json({ success: false, error: "Database error" });
     }
-    res.json({ success: true });
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Item not found" });
+    }
+
+    const photo = rows[0].photo;
+
+    // Step 2: Delete DB record
+    db.query("DELETE FROM inventory WHERE product_ID = ?", [id], (err, result) => {
+      if (err) {
+        console.error("❌ Error deleting inventory:", err);
+        return res.status(500).json({ success: false, error: "Database error" });
+      }
+
+      // Step 3: Remove file if it exists
+      if (photo) {
+        const filePath = path.join(__dirname, "tmp/uploads", photo);
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.warn("⚠️ Could not delete photo:", filePath, err.message);
+          } else {
+            console.log("🗑 Deleted photo:", filePath);
+          }
+        });
+      }
+
+      res.json({ success: true, message: "Item and photo deleted" });
+    });
   });
 });
 
