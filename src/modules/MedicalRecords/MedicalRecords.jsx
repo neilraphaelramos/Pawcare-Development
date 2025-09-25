@@ -5,7 +5,7 @@ import axios from 'axios'
 import './MedicalRecords.css';
 
 export default function PetRecords() {
-  const [pets, setPets] = useState(petsData);
+  const [pets, setPets] = useState([]);
   const [selectedPet, setSelectedPet] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalSearchTerm, setModalSearchTerm] = useState('');
@@ -121,9 +121,9 @@ export default function PetRecords() {
     const updatedPets = pets.map((pet) =>
       pet.id === selectedPet.id
         ? {
-            ...pet,
-            checkups: [...(pet.checkups || []), newRecord]
-          }
+          ...pet,
+          checkups: [...(pet.checkups || []), newRecord]
+        }
         : pet
     );
     setPets(updatedPets);
@@ -176,31 +176,45 @@ export default function PetRecords() {
           <div>Action</div>
         </div>
 
-        {filteredPets.map((pet) => (
-          <div className="pet-records-row" key={pet.id}>
-            <div>{pet.ownerName}</div>
-            <div>
-              <img src={pet.photo} alt={pet.name} className="pet-thumb" />
+        {filteredPets.length > 0 ? (
+          filteredPets.map((pet) => (
+            <div className="pet-records-row" key={pet.id}>
+              <div>{pet.ownerName}</div>
+              <div>
+                <img src={pet.photo} alt={pet.name} className="pet-thumb" />
+              </div>
+              <div>{pet.name}</div>
+              <div>{pet.species}</div>
+              <div>{pet.age} yrs</div>
+              <div>{pet.gender}</div>
+              <div>{pet.condition}</div>
+              <div>{pet.lastVisit}</div>
+              <div className="diagnosis-text">
+                {pet.diagnosis.length > 30
+                  ? pet.diagnosis.slice(0, 30) + '…'
+                  : pet.diagnosis}
+              </div>
+              <div className="action-buttons">
+                <button
+                  className="aksi-btn"
+                  title="View Record"
+                  onClick={() => handleView(pet)}
+                >
+                  <FaRegEye size={16} />
+                </button>
+                <button
+                  className="aksi-btn"
+                  title="Edit Record"
+                  onClick={() => handleEdit(pet)}
+                >
+                  <FaEdit size={16} />
+                </button>
+              </div>
             </div>
-            <div>{pet.name}</div>
-            <div>{pet.species}</div>
-            <div>{pet.age} yrs</div>
-            <div>{pet.gender}</div>
-            <div>{pet.condition}</div>
-            <div>{pet.lastVisit}</div>
-            <div className="diagnosis-text">
-              {pet.diagnosis.length > 30 ? pet.diagnosis.slice(0, 30) + '…' : pet.diagnosis}
-            </div>
-            <div className="action-buttons">
-              <button className="aksi-btn" title="View Record" onClick={() => handleView(pet)}>
-                <FaRegEye size={16} />
-              </button>
-              <button className="aksi-btn" title="Edit Record" onClick={() => handleEdit(pet)}>
-                <FaEdit size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <div className="no-records">Records Not Found</div>
+        )}
       </div>
 
       {selectedPet && (
@@ -280,334 +294,334 @@ export default function PetRecords() {
         </div>
       )}
 
-  {selectedVisit && (
-  <div className="visit-detail-modal-overlay">
-    <div className="visit-detail-modal">
-      <button className="close-btn" onClick={() => setSelectedVisit(null)}>×</button>
-      <button className="print-btn" onClick={() => window.print()}>Print</button>
-      <div className="visit-detail-content scrollable-print">
-        <div className="mr-header-section">
-          <img src="/images/LandingPage/rivera-logo.png" alt="Clinic Logo" className="mr-clinic-logo" />
-          <div className="mr-clinic-details">
-            <h1>PetCare Animal Clinic</h1>
-            <p>123 Veterinary Street, Bocaue, Bulacan</p>
-            <p>Contact: (044) 123-4567 | Email: petcare@clinic.com</p>
-            <p>Date: {new Date().toLocaleDateString()}</p>
+      {selectedVisit && (
+        <div className="visit-detail-modal-overlay">
+          <div className="visit-detail-modal">
+            <button className="close-btn" onClick={() => setSelectedVisit(null)}>×</button>
+            <button className="print-btn" onClick={() => window.print()}>Print</button>
+            <div className="visit-detail-content scrollable-print">
+              <div className="mr-header-section">
+                <img src="/images/LandingPage/rivera-logo.png" alt="Clinic Logo" className="mr-clinic-logo" />
+                <div className="mr-clinic-details">
+                  <h1>PetCare Animal Clinic</h1>
+                  <p>123 Veterinary Street, Bocaue, Bulacan</p>
+                  <p>Contact: (044) 123-4567 | Email: petcare@clinic.com</p>
+                  <p>Date: {new Date().toLocaleDateString()}</p>
+                </div>
+              </div>
+
+              <h2 className="section-title">Patient Medical Summary</h2>
+              <div className="detail-field">
+                <div className="detail-label">Pet Name:</div>
+                <input
+                  type="text"
+                  value={selectedPet.name}
+                  disabled
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Species:</div>
+                <input
+                  type="text"
+                  value={selectedPet.species}
+                  disabled
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Age:</div>
+                <input
+                  type="number"
+                  value={selectedPet.age}
+                  disabled
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Diagnosis:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.diagnosis}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, diagnosis: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Date Admitted:</div>
+                <input
+                  type="date"
+                  value={selectedVisit.admittedDate || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, admittedDate: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Date Discharged:</div>
+                <input
+                  type="date"
+                  value={selectedVisit.completed}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, completed: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Patient Status:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.status}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, status: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Nursing Issues:</div>
+                <textarea
+                  value={selectedVisit.nursingIssues || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, nursingIssues: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Care Plan:</div>
+                <textarea
+                  value={selectedVisit.carePlan || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, carePlan: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Local Status Check:</div>
+                <textarea
+                  value={selectedVisit.localStatus || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, localStatus: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+
+              <h2 className="section-title">Medical Assessment</h2>
+              <div className="detail-field">
+                <div className="detail-label">Main Complaint:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.complaint}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, complaint: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Additional Complaints:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.additionalComplaint || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, additionalComplaint: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Weight:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.weight || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, weight: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Height:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.height || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, height: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">BMI:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.bmi || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, bmi: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Blood Pressure:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.bloodPressure || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, bloodPressure: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Pulse:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.pulse || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, pulse: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+
+              <h2 className="section-title">Prescriptions</h2>
+              <div className="detail-field">
+                <div className="detail-label">Medications:</div>
+                <textarea
+                  value={selectedVisit.medications || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, medications: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+
+              <div className="signature-block">
+                <div className="signature-line"></div>
+                <div className="signature-caption">Veterinarian: Dr. Angela Rivera</div>
+              </div>
+
+              <div className="detail-actions">
+                <button
+                  className="save-btn"
+                  onClick={() => {
+                    const updatedPets = pets.map((pet) => {
+                      if (pet.id === selectedPet.id) {
+                        return {
+                          ...pet,
+                          checkups: pet.checkups.map((visit) =>
+                            visit.date === selectedVisit.date &&
+                              visit.service === selectedVisit.service
+                              ? selectedVisit
+                              : visit
+                          ),
+                        };
+                      }
+                      return pet;
+                    });
+                    setPets(updatedPets);
+                    setSelectedVisit(null);
+                  }}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-
-        <h2 className="section-title">Patient Medical Summary</h2>
-        <div className="detail-field">
-          <div className="detail-label">Pet Name:</div>
-          <input
-            type="text"
-            value={selectedPet.name}
-            disabled
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Species:</div>
-          <input
-            type="text"
-            value={selectedPet.species}
-            disabled
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Age:</div>
-          <input
-            type="number"
-            value={selectedPet.age}
-            disabled
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Diagnosis:</div>
-          <input
-            type="text"
-            value={selectedVisit.diagnosis}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, diagnosis: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Date Admitted:</div>
-          <input
-            type="date"
-            value={selectedVisit.admittedDate || ''}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, admittedDate: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Date Discharged:</div>
-          <input
-            type="date"
-            value={selectedVisit.completed}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, completed: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Patient Status:</div>
-          <input
-            type="text"
-            value={selectedVisit.status}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, status: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Nursing Issues:</div>
-          <textarea
-            value={selectedVisit.nursingIssues || ''}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, nursingIssues: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Care Plan:</div>
-          <textarea
-            value={selectedVisit.carePlan || ''}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, carePlan: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Local Status Check:</div>
-          <textarea
-            value={selectedVisit.localStatus || ''}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, localStatus: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-
-        <h2 className="section-title">Medical Assessment</h2>
-        <div className="detail-field">
-          <div className="detail-label">Main Complaint:</div>
-          <input
-            type="text"
-            value={selectedVisit.complaint}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, complaint: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Additional Complaints:</div>
-          <input
-            type="text"
-            value={selectedVisit.additionalComplaint || ''}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, additionalComplaint: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Weight:</div>
-          <input
-            type="text"
-            value={selectedVisit.weight || ''}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, weight: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Height:</div>
-          <input
-            type="text"
-            value={selectedVisit.height || ''}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, height: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">BMI:</div>
-          <input
-            type="text"
-            value={selectedVisit.bmi || ''}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, bmi: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Blood Pressure:</div>
-          <input
-            type="text"
-            value={selectedVisit.bloodPressure || ''}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, bloodPressure: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Pulse:</div>
-          <input
-            type="text"
-            value={selectedVisit.pulse || ''}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, pulse: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-
-        <h2 className="section-title">Prescriptions</h2>
-        <div className="detail-field">
-          <div className="detail-label">Medications:</div>
-          <textarea
-            value={selectedVisit.medications || ''}
-            onChange={(e) => setSelectedVisit({ ...selectedVisit, medications: e.target.value })}
-            className="editable-input"
-          />
-        </div>
-
-        <div className="signature-block">
-          <div className="signature-line"></div>
-          <div className="signature-caption">Veterinarian: Dr. Angela Rivera</div>
-        </div>
-
-        <div className="detail-actions">
-          <button
-            className="save-btn"
-            onClick={() => {
-              const updatedPets = pets.map((pet) => {
-                if (pet.id === selectedPet.id) {
-                  return {
-                    ...pet,
-                    checkups: pet.checkups.map((visit) =>
-                      visit.date === selectedVisit.date &&
-                      visit.service === selectedVisit.service
-                        ? selectedVisit
-                        : visit
-                    ),
-                  };
-                }
-                return pet;
-              });
-              setPets(updatedPets);
-              setSelectedVisit(null);
-            }}
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
 
-{showAddPetModal && (
-  <div className="pet-modal-overlay">
-    <div className="pet-modal-add">
-      <button className="close-btn" onClick={() => setShowAddPetModal(false)}>×</button>
-      <h3 className="add-modal-title">Add New Pet Record</h3>
-      <form onSubmit={handleAddPet} className="add-pet-form-grid">
-        {/* Left Side: Image */}
-        <div className="add-pet-image-upload">
-          <label htmlFor="petImage" className="add-image-upload-box">
-            <input type="file" id="petImage" name="image" accept="image/*" hidden />
-            <img
-              src="/images/494821804_3615220685439850_5750128201232600483_n.png"
-              alt="Upload"
-              className="add-image-placeholder"
-            />
-          </label>
-        </div>
+      {showAddPetModal && (
+        <div className="pet-modal-overlay">
+          <div className="pet-modal-add">
+            <button className="close-btn" onClick={() => setShowAddPetModal(false)}>×</button>
+            <h3 className="add-modal-title">Add New Pet Record</h3>
+            <form onSubmit={handleAddPet} className="add-pet-form-grid">
+              {/* Left Side: Image */}
+              <div className="add-pet-image-upload">
+                <label htmlFor="petImage" className="add-image-upload-box">
+                  <input type="file" id="petImage" name="image" accept="image/*" hidden />
+                  <img
+                    src="/images/494821804_3615220685439850_5750128201232600483_n.png"
+                    alt="Upload"
+                    className="add-image-placeholder"
+                  />
+                </label>
+              </div>
 
-        {/* Right Side: Inputs */}
-        <div className="add-pet-form-fields">
-          <div className="add-form-group">
-              <input name="ownerName" type="text" placeholder="Owner Name" required />
-            <input name="name" type="text" placeholder="Pet Name" required /> 
-            <input name="age" type="number" placeholder="Age" required />
-          </div>
+              {/* Right Side: Inputs */}
+              <div className="add-pet-form-fields">
+                <div className="add-form-group">
+                  <input name="ownerName" type="text" placeholder="Owner Name" required />
+                  <input name="name" type="text" placeholder="Pet Name" required />
+                  <input name="age" type="number" placeholder="Age" required />
+                </div>
 
-          <div className="add-form-group">
-            <select name="species" required defaultValue="">
-              <option value="" disabled>Select Species</option>
-              <option value="Dog">Dog</option>
-              <option value="Cat">Cat</option>
-            </select>
-            <select name="gender" required defaultValue="">
-              <option value="" disabled>Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
+                <div className="add-form-group">
+                  <select name="species" required defaultValue="">
+                    <option value="" disabled>Select Species</option>
+                    <option value="Dog">Dog</option>
+                    <option value="Cat">Cat</option>
+                  </select>
+                  <select name="gender" required defaultValue="">
+                    <option value="" disabled>Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
 
-          <div className="add-form-group">
-            <input name="condition" type="text" placeholder="Condition" required />
-            <input name="lastVisit" type="date" placeholder="Last Visit" required />
-          </div>
+                <div className="add-form-group">
+                  <input name="condition" type="text" placeholder="Condition" required />
+                  <input name="lastVisit" type="date" placeholder="Last Visit" required />
+                </div>
 
-          <div className="add-form-group">
-            <input name="diagnosis" type="text" placeholder="Diagnosis" required />
-          </div>
+                <div className="add-form-group">
+                  <input name="diagnosis" type="text" placeholder="Diagnosis" required />
+                </div>
 
-          <div className="add-button-row">
-            <button type="submit" className="add-add-btn">Add Pet</button>
-            <button type="button" className="cancel-btn" onClick={() => setShowAddPetModal(false)}>Cancel</button>
+                <div className="add-button-row">
+                  <button type="submit" className="add-add-btn">Add Pet</button>
+                  <button type="button" className="cancel-btn" onClick={() => setShowAddPetModal(false)}>Cancel</button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
-      </form>
-    </div>
-  </div>
-)}
+      )}
       {showEditModal && (
         <div className="pet-modal-overlay">
-    <div className="pet-modal-edit">
-      <button className="close-btn" onClick={() => setShowEditModal(false)}>×</button>
-      <h3 className="edit-modal-title">Edit Pet Record</h3>
-      <form onSubmit={handleAddPet} className="edit-pet-form-grid">
-        {/* Left Side: Image */}
-        <div className="edit-pet-image-upload">
-          <label htmlFor="petImage" className="edit-image-upload-box">
-            <input type="file" id="petImage" name="image" accept="image/*" hidden />
-            <img
-              src="/images/494821804_3615220685439850_5750128201232600483_n.png"
-              alt="Upload"
-              className="edit-image-placeholder"
-            />
-          </label>
+          <div className="pet-modal-edit">
+            <button className="close-btn" onClick={() => setShowEditModal(false)}>×</button>
+            <h3 className="edit-modal-title">Edit Pet Record</h3>
+            <form onSubmit={handleAddPet} className="edit-pet-form-grid">
+              {/* Left Side: Image */}
+              <div className="edit-pet-image-upload">
+                <label htmlFor="petImage" className="edit-image-upload-box">
+                  <input type="file" id="petImage" name="image" accept="image/*" hidden />
+                  <img
+                    src="/images/494821804_3615220685439850_5750128201232600483_n.png"
+                    alt="Upload"
+                    className="edit-image-placeholder"
+                  />
+                </label>
+              </div>
+              {/* Right Side: Inputs */}
+              <div className="edit-pet-form-fields">
+                <div className="edit-form-group">
+                  <input name="ownerName" type="text" placeholder="Owner Name" required />
+                  <input name="name" type="text" placeholder="Pet Name" required />
+                  <input name="age" type="number" placeholder="Age" required />
+                </div>
+
+                <div className="edit-form-group">
+                  <select name="species" required defaultValue="">
+                    <option value="" disabled>Select Species</option>
+                    <option value="Dog">Dog</option>
+                    <option value="Cat">Cat</option>
+                  </select>
+                  <select name="gender" required defaultValue="">
+                    <option value="" disabled>Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+
+                <div className="edit-form-group">
+                  <input name="condition" type="text" placeholder="Condition" required />
+                  <input name="lastVisit" type="date" placeholder="Last Visit" required />
+                </div>
+
+                <div className="edit-form-group">
+                  <input name="diagnosis" type="text" placeholder="Diagnosis" required />
+                </div>
+
+                <div className="edit-button-row">
+                  <button type="submit" className="edit-add-btn">Add Pet</button>
+                  <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
-        {/* Right Side: Inputs */}
-        <div className="edit-pet-form-fields">
-          <div className="edit-form-group">
-            <input name="ownerName" type="text" placeholder="Owner Name" required />
-            <input name="name" type="text" placeholder="Pet Name" required />
-            <input name="age" type="number" placeholder="Age" required />
-          </div>
-
-          <div className="edit-form-group">
-            <select name="species" required defaultValue="">
-              <option value="" disabled>Select Species</option>
-              <option value="Dog">Dog</option>
-              <option value="Cat">Cat</option>
-            </select>
-            <select name="gender" required defaultValue="">
-              <option value="" disabled>Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-
-          <div className="edit-form-group">
-            <input name="condition" type="text" placeholder="Condition" required />
-            <input name="lastVisit" type="date" placeholder="Last Visit" required />
-          </div>
-
-          <div className="edit-form-group">
-            <input name="diagnosis" type="text" placeholder="Diagnosis" required />
-          </div>
-
-          <div className="edit-button-row">
-            <button type="submit" className="edit-add-btn">Add Pet</button>
-            <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
       )}
     </div>
   );

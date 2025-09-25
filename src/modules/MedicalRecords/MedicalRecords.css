@@ -216,6 +216,14 @@ body {
   overflow: hidden;
 }
 
+.no-records {
+  text-align: center;
+  grid-column: 1 / -1; /* span full width of grid */
+  padding: 12px;
+  color: #888;
+  font-style: italic;
+}
+
 .add-image-placeholder,
 .edit-image-placeholder {
   width: 100%;
