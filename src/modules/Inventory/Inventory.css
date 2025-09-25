@@ -1,3 +1,25 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: #f7f9fc;
+  overflow: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
 .inventory-controls {
   display: flex;
   gap: 10px;
@@ -59,17 +81,20 @@
 
 
 .admin-inventory-container {
-  padding: 2rem;
-  background: #edf2f7;
   font-family: 'Segoe UI', sans-serif;
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #edf2f7;
+  font-family: 'Poppins', sans-serif;
+  overflow-y: auto;
 }
 
 .admin-inventory-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0rem;
 }
 
 .admin-inventory-header h2 {
@@ -173,31 +198,46 @@
   font-weight: bold;
 }
 
+
 .pagination {
-  margin-top: 30px;
+  margin-top: 20px;
+}
+
+.entries-info {
+  display: block;
+  margin-bottom: 10px;
+  text-align: left; /* ✅ stays on the left */
+}
+
+.page-controls-wrapper {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
+  justify-content: center; /* ✅ centers only the buttons */
+  width: 160%;
+}
+
+.page-controls {
+  display: flex;
+  gap: 3px;
 }
 
 .page-controls button {
-  margin: 0 2px;
-  padding: 4px 8px;
-  border: none;
-  background-color: #f3f4f6;
-  border-radius: 4px;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  background: white;
   cursor: pointer;
+  border-radius: 4px;
 }
 
-.page-controls .active {
-  background-color: #34c38f;
+
+.page-controls button.active {
+  background: #34c38f;
   color: white;
+  font-weight: bold;
 }
 
-.show-entries select {
-  margin: 0 5px;
-  padding: 2px 5px;
+.page-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .item-photo {
@@ -348,9 +388,6 @@
   background-color: #d1d5db;
 }
 
-
-
-
 .admin-inventory-export-dropdown {
   position: relative;
   display: inline-block;
@@ -391,4 +428,98 @@
 
 .admin-inventory-dropdown-item:hover {
   background-color: #f0f0f0;
+}
+
+.inventory-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.inventory-date-filter {
+  padding: 6px 5px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #ffffff;
+  margin-top: 15px;
+}
+
+
+
+.inventory-filters-row {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+  align-items: center;
+}
+
+.inventory-search-input,
+.inventory-date-filter {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.month-input-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.inventory-month-filter {
+  padding: 6px 5px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-top: 15px;
+  position: relative;
+  z-index: 1;               /* push it below the placeholder */
+  background-color: #ffffff; /* ✅ still white */
+  color: transparent;        /* hide native ---- */
+  caret-color: black;        /* keep cursor visible */
+}
+
+.inventory-month-filter:focus,
+.inventory-month-filter[value]:not([value=""]) {
+  color: black;              /* show real month after picking */
+}
+
+.month-placeholder {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 0.9rem;
+  pointer-events: none;
+  z-index: 2;                /* sits above the input */
+}
+
+.success-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #4CAF50; /* green success */
+  color: white;
+  padding: 12px 18px;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  font-size: 14px;
+  z-index: 1000;
+  animation: fadeInOut 3s ease forwards;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+.inventory-table td img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  display: block;
+  border-radius: 6px; /* optional */
 }

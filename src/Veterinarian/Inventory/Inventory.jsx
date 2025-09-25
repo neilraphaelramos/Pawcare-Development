@@ -14,49 +14,26 @@ const generateItemCode = (group = 'X') => {
 // CSV export helper (unchanged)
 function exportToCSV(data) {
   const headers = ['Item Code', 'Item Name', 'Item Group', 'Last Purchase', 'Expiration', 'Price', 'Stocks'];
+  const rows = data.map(item => [
+    item.code,
+    item.name,
+    item.group,
+    item.date,
+    item.expiration,
+    item.price,
+    item.stock,
+  ]);
 
-  const rows = data.map(item => {
-    // --- Clean up price ---
-    let cleanPrice = "";
-    if (item.price !== undefined && item.price !== null && item.price !== "") {
-      cleanPrice = String(
-        Number(String(item.price).replace(/[₱,\s]/g, ""))
-          .toFixed(2)
-      );
-    }
-
-    return [
-      item.code ?? "",
-      item.name ?? "",
-      item.group ?? "",
-      item.date ?? "",
-      item.expiration ?? "",
-      cleanPrice,                // ✅ plain number
-      item.stock ?? "",
-    ];
-  });
-
-  // Escape CSV values (wrap in quotes if needed)
-  const escapeCSV = (value) => {
-    if (value === null || value === undefined) return "";
-    const str = String(value);
-    if (/[",\n]/.test(str)) {
-      return `"${str.replace(/"/g, '""')}"`; // escape quotes
-    }
-    return str;
-  };
-
-  let csvContent = "data:text/csv;charset=utf-8,";
-  csvContent += headers.join(",") + "\r\n";
+  let csvContent = 'data:text/csv;charset=utf-8,';
+  csvContent += headers.join(',') + '\r\n';
   rows.forEach(row => {
-    csvContent += row.map(escapeCSV).join(",") + "\r\n";
+    csvContent += row.join(',') + '\r\n';
   });
 
-  // Trigger download
   const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "inventory_export.csv");
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', 'inventory_export.csv');
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -130,6 +107,9 @@ export default function InventoryTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [filterDate, setFilterDate] = useState('');
+  const [filterMonth, setFilterMonth] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [newItem, setNewItem] = useState({
     id: undefined,      // for edits
     code: '',
@@ -161,7 +141,7 @@ export default function InventoryTable() {
       price: row.price ? `₱ ${Number(row.price).toFixed(2)}` : "",
       unit: row.unit || "",
       stock: row.stock ?? 0,
-      low: row.stock !== null && row.stock < 5, // optional: flag for low stock
+      low: row.stock !== null && row.stock < 5,
     };
   };
 
@@ -245,11 +225,17 @@ export default function InventoryTable() {
 
   const filteredData = inventoryData.filter(item => {
     const term = searchTerm.toLowerCase();
-    return (
+    const matchesSearch =
       (item.name || '').toLowerCase().includes(term) ||
       (item.code || '').toLowerCase().includes(term) ||
-      (item.group || '').toLowerCase().includes(term)
-    );
+      (item.group || '').toLowerCase().includes(term);
+
+    // Filter by exact date for table
+    const matchesDate = filterDate
+      ? item.date === filterDate
+      : true;
+
+    return matchesSearch && matchesDate;
   });
 
   const totalEntries = filteredData.length;
@@ -329,10 +315,12 @@ export default function InventoryTable() {
           await axios.put(`${API_BASE}/update_inventory/${editingItem.id}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
+          setSuccessMessage("Item updated successfully!");
         } else {
           await axios.post(`${API_BASE}/add_inventory`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
+          setSuccessMessage("Item added successfully!");
         }
 
         // Refresh & reset
@@ -351,6 +339,7 @@ export default function InventoryTable() {
         });
         setEditingIndex(null);
         setShowAddModal(false);
+        setTimeout(() => setSuccessMessage(''), 3000);
       } catch (err) {
         console.error("Error saving inventory:", err);
         alert("There was an error saving the item. Please try again.");
@@ -363,11 +352,21 @@ export default function InventoryTable() {
 
   // simple export handler to keep your dropdown working
   const handleExport = (type) => {
+    let exportData = [...inventoryData];
+
+    if (filterMonth) {
+      const [year, month] = filterMonth.split("-");
+      exportData = exportData.filter(item => {
+        if (!item.date) return false;
+        const [itemYear, itemMonth] = item.date.split("-");
+        return itemYear === year && itemMonth === month;
+      });
+    }
+
     if (type === 'csv') {
-      exportToCSV(filteredData);
+      exportToCSV(exportData);
     } else if (type === 'pdf') {
-      // quick print for now; you can hook a real PDF export later
-      exportToPDF(filteredData)
+      exportToPDF(exportData);
     }
   };
 
@@ -376,14 +375,15 @@ export default function InventoryTable() {
       <div className="admin-inventory-header">
         <h2>Inventory Management</h2>
         <div className="inventory-controls">
-          <input
-            type="text"
-            placeholder="Search by code, name or group..."
-            className="inventory-search-input"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-
+          <div className="month-input-wrapper">
+            {!filterMonth && <span className="month-placeholder">MM/YYYY</span>}
+            <input
+              type="month"
+              className="inventory-month-filter"
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(e.target.value)}
+            />
+          </div>
           <div className="admin-inventory-export-dropdown">
             <button
               className="admin-inventory-btn admin-inventory-export-btn admin-inventory-dropdown-toggle"
@@ -397,7 +397,7 @@ export default function InventoryTable() {
                 <div
                   className="admin-inventory-dropdown-item"
                   onClick={() => {
-                    handleExport('pdf');
+                    handleExport("pdf");
                     setShowDropdown(false);
                   }}
                 >
@@ -406,7 +406,7 @@ export default function InventoryTable() {
                 <div
                   className="admin-inventory-dropdown-item"
                   onClick={() => {
-                    handleExport('csv');
+                    handleExport("csv");
                     setShowDropdown(false);
                   }}
                 >
@@ -422,15 +422,15 @@ export default function InventoryTable() {
               setEditingIndex(null);
               setNewItem({
                 id: undefined,
-                code: '',
-                photo: '',
-                name: '',
-                group: '',
-                date: '',
-                expiration: '',
-                stock: '',
-                price: '',
-                unit: '',
+                code: "",
+                photo: "",
+                name: "",
+                group: "",
+                date: "",
+                expiration: "",
+                stock: "",
+                price: "",
+                unit: "",
               });
               setShowAddModal(true);
             }}
@@ -439,6 +439,29 @@ export default function InventoryTable() {
           </button>
         </div>
       </div>
+
+      <div className="inventory-filters-row">
+        <input
+          type="text"
+          placeholder="Search by code, name or group..."
+          className="inventory-search-input"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+
+        <input
+          type="date"
+          className="inventory-date-filter"
+          value={filterDate}
+          onChange={(e) => setFilterDate(e.target.value)}
+        />
+      </div>
+
+      {successMessage && (
+        <div className="success-popup">
+          {successMessage}
+        </div>
+      )}
 
       <table className="inventory-table">
         <thead>
