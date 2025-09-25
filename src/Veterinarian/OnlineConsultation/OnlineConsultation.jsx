@@ -120,11 +120,13 @@ const VetConsultationAdmin = () => {
                 <h3>
                   Chat with {fetchOC.find(r => r.channelConsult === activeChatId)?.ownerName}
                 </h3>
-                <button className="close-chat-btn" onClick={() => setActiveChatId(null)}>
+                <button className="close-chat-btn" onClick={() => {
+                  setActiveChatId(null)
+                  sessionStorage.removeItem('ConsultId')
+                }}>
                   <FaTimes />
                 </button>
               </div>
-
               <div className="chat-messages">
                 {(chats[activeChatId] || []).map((msg, i) => (
                   <div key={i} className={`chat-message ${msg.from === 'vet' ? 'from-vet' : 'from-client'}`}>
@@ -155,7 +157,7 @@ const VetConsultationAdmin = () => {
         <>
           <div className="video-call-overlay">
             <div className="video-call-header">
-              <button onClick={() =>handleCloseCall()} className="close-call-btn">
+              <button onClick={() => handleCloseCall()} className="close-call-btn">
                 <FaTimes />
               </button>
             </div>

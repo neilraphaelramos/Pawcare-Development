@@ -120,7 +120,10 @@ const VetConsultationAdmin = () => {
                 <h3>
                   Chat with {fetchOC.find(r => r.channelConsult === activeChatId)?.ownerName}
                 </h3>
-                <button className="close-chat-btn" onClick={() => setActiveChatId(null)}>
+                <button className="close-chat-btn" onClick={() => {
+                  setActiveChatId(null)
+                  sessionStorage.removeItem('ConsultId')
+                }}>
                   <FaTimes />
                 </button>
               </div>

@@ -1,8 +1,7 @@
-// PetRecords.jsx
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaPlus, FaRegEye, FaEdit } from 'react-icons/fa';
 import petsData from '../../data/petsData.json';
+import axios from 'axios'
 import './MedicalRecords.css';
 
 export default function PetRecords() {

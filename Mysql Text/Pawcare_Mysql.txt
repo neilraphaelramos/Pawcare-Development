@@ -78,3 +78,52 @@ CREATE TABLE appointments_tables (
     PRIMARY KEY(id_appoint)
 );
 
+CREATE TABLE orders (
+	id_order int AUTO_INCREMENT NOT NULL,
+    uid int NOT NULL,
+    custormer_name VARCHAR(200) NOT NULL,
+    ped_product TEXT NOT NULL,
+    customer_address VARCHAR(255) NOT NULL,
+    order_date DATE NOT NULL,
+    total FLOAT(10,2) NOT NULL,
+    order_status ENUM('Pending','Out Delivery','Shipped','Cancelled') NOT NULL DEFAULT 'Pending',
+    PRIMARY KEY (id_order)
+);
+
+CREATE TABLE notification (
+	notify_id int AUTO_INCREMENT NOT NULL,
+    title_notify VARCHAR(200) NOT NULL,
+    type_notify ENUM('Appointments','Online Consultations','Stock Alerts') NOT NULL,
+    details TEXT NOT NULL,
+    notify_date DATETIME NOT NULL,
+    PRIMARY KEY (notify_id)
+);    
+
+CREATE TABLE pet_medical_records (
+	id_medical_record INT AUTO_INCREMENT NOT NULL,
+    owner_name VARCHAR(255) NOT NULL,
+    photo_pet VARCHAR(90) NOT NULL,
+    pet_name VARCHAR(100) NOT NULL,
+    species ENUM('Dog','Cats') NOT NULL,
+    pet_age INT NOT NULL,
+    pet_gender ENUM('Male','Female') NOT NULL,
+    pet_condition TEXT NOT NULL,
+    last_visit DATE NOT NULL,
+    diagnosis TEXT NOT NULL,
+    PRIMARY KEY (id_medical_record)
+);
+
+CREATE TABLE visit_history (
+	id_pet_history INT AUTO_INCREMENT NOT NULL,
+    id_pet_medical_records INT NOT NULL,
+    day VARCHAR(20) NOT NULL,
+    date_visit DATE NOT NULL,
+    service_type VARCHAR(90) NOT NULL,
+    main_complaint VARCHAR(90) NOT NULL,
+    pet_diagnosis VARCHAR(40) NOT NULL,
+    treatment_status VARCHAR(100) NOT NULL,
+    date_completed_on DATE NOT NULL,
+    PRIMARY KEY (id_pet_history)
+);
+
+

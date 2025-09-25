@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Edit, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import "./Inventory.css";
+import jsPDF from "jspdf";
 
 // Utility: Generate item code based on group prefix
 const generateItemCode = (group = 'X') => {
@@ -13,41 +14,121 @@ const generateItemCode = (group = 'X') => {
 // CSV export helper (unchanged)
 function exportToCSV(data) {
   const headers = ['Item Code', 'Item Name', 'Item Group', 'Last Purchase', 'Expiration', 'Price', 'Stocks'];
-  const rows = data.map(item => [
-    item.code,
-    item.name,
-    item.group,
-    item.date,
-    item.expiration,
-    item.price,
-    item.stock,
-  ]);
 
-  let csvContent = 'data:text/csv;charset=utf-8,';
-  csvContent += headers.join(',') + '\r\n';
-  rows.forEach(row => {
-    csvContent += row.join(',') + '\r\n';
+  const rows = data.map(item => {
+    // --- Clean up price ---
+    let cleanPrice = "";
+    if (item.price !== undefined && item.price !== null && item.price !== "") {
+      cleanPrice = String(
+        Number(String(item.price).replace(/[₱,\s]/g, ""))
+          .toFixed(2)
+      );
+    }
+
+    return [
+      item.code ?? "",
+      item.name ?? "",
+      item.group ?? "",
+      item.date ?? "",
+      item.expiration ?? "",
+      cleanPrice,                // ✅ plain number
+      item.stock ?? "",
+    ];
   });
 
+  // Escape CSV values (wrap in quotes if needed)
+  const escapeCSV = (value) => {
+    if (value === null || value === undefined) return "";
+    const str = String(value);
+    if (/[",\n]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`; // escape quotes
+    }
+    return str;
+  };
+
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += headers.join(",") + "\r\n";
+  rows.forEach(row => {
+    csvContent += row.map(escapeCSV).join(",") + "\r\n";
+  });
+
+  // Trigger download
   const encodedUri = encodeURI(csvContent);
-  const link = document.createElement('a');
-  link.setAttribute('href', encodedUri);
-  link.setAttribute('download', 'inventory_export.csv');
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "inventory_export.csv");
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+function exportToPDF(data) {
+  const doc = new jsPDF();
+
+  const headers = ['Item Code', 'Item Name', 'Item Group', 'Last Purchase', 'Expiration', 'Price', 'Stocks'];
+
+  let startX = 14;
+  let startY = 20;
+  let lineHeight = 10;
+
+  doc.setFontSize(16);
+  doc.text("Inventory Report", startX, startY);
+  startY += 10;
+
+  doc.setFontSize(10);
+
+  headers.forEach((header, i) => {
+    doc.text(header, startX + i * 30, startY);
+  });
+
+  startY += lineHeight;
+
+  data.forEach((item) => {
+    let cleanPrice = "";
+    if (item.price !== undefined && item.price !== null && item.price !== "") {
+      cleanPrice = String(
+        Number(String(item.price).replace(/[₱,\s]/g, ""))
+          .toFixed(2)
+      );
+    }
+
+    const row = [
+      item.code,
+      item.name,
+      item.group,
+      item.date,
+      item.expiration,
+      cleanPrice,                 // ✅ always plain number
+      String(item.stock ?? ""),
+    ];
+
+    row.forEach((cell, i) => {
+      doc.text(String(cell ?? ""), startX + i * 30, startY);
+    });
+
+    startY += lineHeight;
+
+    // Handle page break
+    if (startY > 280) {
+      doc.addPage();
+      startY = 20;
+    }
+  });
+
+  // Save PDF
+  doc.save("inventory_report.pdf");
 }
 
 const API_BASE = "http://localhost:5000";
 
 
 export default function InventoryTable() {
-  // keep your initial dummy data but we will replace it with DB data on mount
   const [inventoryData, setInventoryData] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingIndex, setEditingIndex] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newItem, setNewItem] = useState({
     id: undefined,      // for edits
@@ -61,12 +142,6 @@ export default function InventoryTable() {
     price: '',
     unit: '',
   });
-
-  // ---- Fetch & map helpers ----
-  const parseDescription = (desc) => {
-    if (!desc) return {};
-    try { return JSON.parse(desc); } catch { return {}; }
-  };
 
   const getPhotoUrl = (photo) => {
     if (!photo) return "";
@@ -150,20 +225,17 @@ export default function InventoryTable() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Store the actual File object for potential upload
     setNewItem((prev) => ({ ...prev, photoFile: file }));
 
-    // Create a preview URL using FileReader
     const reader = new FileReader();
     reader.onloadend = () => {
       setNewItem((prev) => ({ ...prev, photoPreview: reader.result }));
     };
-    reader.readAsDataURL(file); // Converts file to Base64 string for preview
+    reader.readAsDataURL(file);
   };
 
   useEffect(() => {
     if (showAddModal && newItem.group) {
-      // Only generate if group is selected
       setNewItem((prev) => ({
         ...prev,
         code: prev.code || generateItemCode(prev.group),
@@ -171,7 +243,6 @@ export default function InventoryTable() {
     }
   }, [showAddModal, newItem.group]);
 
-  // Filter inventory by search term (code, name, or group)
   const filteredData = inventoryData.filter(item => {
     const term = searchTerm.toLowerCase();
     return (
@@ -180,6 +251,28 @@ export default function InventoryTable() {
       (item.group || '').toLowerCase().includes(term)
     );
   });
+
+  const totalEntries = filteredData.length;
+  const totalPages = Math.ceil(totalEntries / rowsPerPage);
+
+  // Compute start & end index
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, totalEntries);
+
+  // Slice data for the current page
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleRowsPerPageChange = (e) => {
+    setRowsPerPage(Number(e.target.value));
+    setCurrentPage(1); // reset to page 1
+  };
+
 
   // Handle form input change for Add Item modal
   const handleInputChange = (e) => {
@@ -204,29 +297,12 @@ export default function InventoryTable() {
     return Number.isFinite(n) ? n : '';
   };
 
-  const buildPayloadFromNewItem = () => {
-    const quantity = sanitizeNumber(newItem.stock);
-    const price = sanitizeNumber(newItem.price);
-
-    return {
-      item_code: newItem.code,
-      photo: newItem.photo,   // base64 image
-      name: newItem.name,
-      item_group: newItem.group,
-      date_purchase: newItem.date,
-      date_expiration: newItem.expiration,
-      stock: quantity === '' ? 0 : quantity,
-      price: price === '' ? 0 : price,
-      unit: newItem.unit,
-    };
-  };
-
-
   // Add/Update item to DB (preserve your validation + UX)
   const handleAddItem = async () => {
+    console.table(newItem);
     if (
-      newItem.code && newItem.photoFile && newItem.name &&
-      newItem.group && newItem.date && newItem.stock && newItem.price
+      newItem.code && newItem.name && newItem.group &&
+      newItem.date && newItem.stock && newItem.price
     ) {
       const quantity = sanitizeNumber(newItem.stock);
       const price = sanitizeNumber(newItem.price);
@@ -234,7 +310,6 @@ export default function InventoryTable() {
       // Build FormData instead of JSON
       const formData = new FormData();
       formData.append('item_code', newItem.code);
-      formData.append('photo', newItem.photoFile); // actual file
       formData.append('name', newItem.name);
       formData.append('item_group', newItem.group);
       formData.append('date_purchase', newItem.date);
@@ -242,6 +317,11 @@ export default function InventoryTable() {
       formData.append('stock', quantity === '' ? 0 : quantity);
       formData.append('price', price === '' ? 0 : price);
       formData.append('unit', newItem.unit);
+
+      // Only append photo if new file is chosen
+      if (!editingIndex || newItem.photoFile instanceof File) {
+        formData.append('photo', newItem.photoFile);
+      }
 
       try {
         if (editingIndex !== null) {
@@ -280,13 +360,14 @@ export default function InventoryTable() {
     }
   };
 
+
   // simple export handler to keep your dropdown working
   const handleExport = (type) => {
     if (type === 'csv') {
-      exportToCSV(inventoryData);
+      exportToCSV(filteredData);
     } else if (type === 'pdf') {
       // quick print for now; you can hook a real PDF export later
-      window.print();
+      exportToPDF(filteredData)
     }
   };
 
@@ -375,7 +456,7 @@ export default function InventoryTable() {
           </tr>
         </thead>
         <tbody>
-          {filteredData.map((item, index) => (
+          {paginatedData.map((item, index) => (
             <tr key={item.id ?? index}>
               <td>{item.code}</td>
               <td>
@@ -544,22 +625,32 @@ export default function InventoryTable() {
       )}
 
       <div className="pagination">
-        <span>Showing 1 - 10 of 148 entries</span>
+        <span>
+          Showing {totalEntries === 0 ? 0 : startIndex + 1} - {endIndex} of {totalEntries} entries
+        </span>
+
         <div className="page-controls">
-          <button>&lt;</button>
-          <button className="active">1</button>
-          <button>2</button>
-          <button>3</button>
-          <button>4</button>
-          <button>5</button>
-          <button>&gt;</button>
+          <button disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)}>&lt;</button>
+
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i + 1}
+              className={currentPage === i + 1 ? "active" : ""}
+              onClick={() => goToPage(i + 1)}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          <button disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)}>&gt;</button>
         </div>
+
         <div className="show-entries">
           <span>Show</span>
-          <select>
-            <option>10</option>
-            <option>25</option>
-            <option>50</option>
+          <select value={rowsPerPage} onChange={handleRowsPerPageChange}>
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
           </select>
           <span>entries</span>
         </div>

@@ -1173,7 +1173,7 @@ app.post('/appointments', (req, res) => {
   const sql = `INSERT INTO appointments_tables (set_date, set_time, owner_name, UID) VALUES (?, ?, ?, ?)`;
   db.query(sql, [set_date, set_time, owner_name, user_id], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: `${set_date} at ${set_time}`});
+    res.json({ message: `${set_date} at ${set_time}` });
   });
 });
 
@@ -1206,6 +1206,54 @@ app.put('/appointments/:id/status', (req, res) => {
     res.json({ message: 'Status updated' });
   });
 });
+
+app.get('/fetch/pet_medical_records', (req, res) => {
+  const medical_record = `SELECT * FROM pet_medical_records `
+  const history = `SELECT * FROM visit_history `
+
+  db.query(medical_record, (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      return res.status(500).json({ error: "Database error" });
+    };
+
+    const records = results.map((data_records) => ({
+      id: data_records.id_medical_record,
+      ownerName: data_records.owner_name,
+      photo_text: data_records.photo_pet,
+      petName: data_records.pet_name,
+      pet_species: data_records.species,
+      petAge: data_records.pet_age,
+      petGender: data_records.pet_gender,
+      petCondition: data_records.pet_condition,
+      lastVisitDate: data_records.last_visit,
+      diagnosisDetail: data_records.diagnosis,
+    }));
+
+    res.json(records);
+
+    db.query(history, (err, results) => {
+      if (err) {
+        console.error("Error fetching data:", err);
+        return res.status(500).json({ error: "Database error" });
+      };
+
+      const history_fetch = results.map((data_histories) => ({
+        history_id: data_histories.id_pet_history,
+        medical_id: data_histories.id_pet_medical_records,
+        day: data_histories.day,
+        dateVisit: data_histories.date_visit,
+        serviceType: data_histories.service_type,
+        complaint: data_histories.main_complaint,
+        petDiagnosis: data_histories.pet_diagnosis,
+        status: data_histories.treatment_status,
+        dateCompleted: data_histories.date_completed_on,
+      }));
+
+      res.json(history_fetch);
+    })
+  })
+})
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
