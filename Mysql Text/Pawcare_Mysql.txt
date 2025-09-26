@@ -82,12 +82,19 @@ CREATE TABLE orders (
 	id_order int AUTO_INCREMENT NOT NULL,
     uid int NOT NULL,
     custormer_name VARCHAR(200) NOT NULL,
-    ped_product TEXT NOT NULL,
     customer_address VARCHAR(255) NOT NULL,
     order_date DATE NOT NULL,
     total FLOAT(10,2) NOT NULL,
     order_status ENUM('Pending','Out Delivery','Shipped','Cancelled') NOT NULL DEFAULT 'Pending',
     PRIMARY KEY (id_order)
+);
+
+CREATE TABLE order_items (
+    id_item INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    product_name VARCHAR(255) NOT NULL,
+    quantity INT NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(id_order) ON DELETE CASCADE
 );
 
 CREATE TABLE notification (

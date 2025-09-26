@@ -14,15 +14,20 @@ const generateItemCode = (group = 'X') => {
 // CSV export helper (unchanged)
 function exportToCSV(data) {
   const headers = ['Item Code', 'Item Name', 'Item Group', 'Last Purchase', 'Expiration', 'Price', 'Stocks'];
-  const rows = data.map(item => [
-    item.code,
-    item.name,
-    item.group,
-    item.date,
-    item.expiration,
-    item.price,
-    item.stock,
-  ]);
+  
+  const rows = data.map(item => {
+    // Remove any currency symbols or commas from price
+    const cleanPrice = item.price ? String(item.price).replace(/[₱,\s]/g, '') : '';
+    return [
+      item.code,
+      item.name,
+      item.group,
+      item.date,
+      item.expiration,
+      cleanPrice,
+      item.stock,
+    ];
+  });
 
   let csvContent = 'data:text/csv;charset=utf-8,';
   csvContent += headers.join(',') + '\r\n';

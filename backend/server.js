@@ -1259,6 +1259,42 @@ app.get('/fetch/pet_medical_records', (req, res) => {
   });
 });
 
+app.get('/fetch/orders', (req, res) => {
+  const sql = `
+    SELECT 
+      o.id_order, 
+      o.customer_name, 
+      o.customer_address, 
+      o.order_date, 
+      o.total, 
+      o.order_status,
+      i.product_name, 
+      i.quantity
+    FROM orders o
+    LEFT JOIN order_items i 
+      ON o.id_order = i.order_id
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error fetching inventory:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+    res.json({ success: true, data: results});
+  });
+});
+
+app.put('/update_status/orders/:id', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const sql = `UPDATE orders SET order_status = ? WHERE id_order = ?`;
+
+  db.query(sql, [status, id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Order Status updated' });
+  });
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
