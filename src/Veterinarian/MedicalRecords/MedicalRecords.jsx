@@ -1,10 +1,7 @@
-// PetRecords.jsx
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaPlus, FaRegEye, FaEdit } from 'react-icons/fa';
-import petsData from '../../data/petsData.json';
+import axios from 'axios'
 import './MedicalRecords.css';
-import axios from 'axios';
 
 export default function PetRecords() {
   const [pets, setPets] = useState([]);
@@ -16,7 +13,11 @@ export default function PetRecords() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState(null);
   const [addingRecord, setAddingRecord] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
   const [newRecord, setNewRecord] = useState({
+    ownerEmail: '',
+    ownerAddress: '',
+    ownerPhoneNum: '',
     day: '',
     date: '',
     service: '',
@@ -26,7 +27,26 @@ export default function PetRecords() {
     completed: ''
   });
 
-  const handleView = (pet) => setSelectedPet(pet);
+  const APIENDPOINT = 'http://localhost:5000';
+
+  const handleView = (pet) => {
+    axios.get(`${APIENDPOINT}/fetch/visit_history/${pet.id}`)
+      .then((res) => {
+        setSelectedPet({ ...pet, checkups: res.data });
+      })
+      .catch((err) => {
+        console.error("Error fetching visit history:", err);
+        setSelectedPet({ ...pet, checkups: [] }); // fallback
+      });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPreviewImage(URL.createObjectURL(file));
+    }
+  };
+
   const handleCloseModal = () => {
     setSelectedPet(null);
     setModalSearchTerm('');
@@ -42,25 +62,41 @@ export default function PetRecords() {
     });
   };
 
-  const handleAddPet = (e) => {
+  const handleAddPet = async (e) => {
     e.preventDefault();
     const form = e.target;
-    const newPet = {
-      id: Date.now(),
-      ownerName: form.ownerName.value,
-      name: form.name.value,
-      species: form.species.value,
-      age: form.age.value,
-      gender: form.gender.value,
-      condition: form.condition.value,
-      lastVisit: form.lastVisit.value,
-      diagnosis: form.diagnosis.value,
-      photo: '/images/default-pet.png',
-      checkups: []
-    };
-    setPets([...pets, newPet]);
-    setShowAddPetModal(false);
-    form.reset();
+    const formData = new FormData();
+
+    formData.append("owner_name", form.ownerName.value);
+    formData.append("user_name", form.userName.value);
+    formData.append("pet_name", form.name.value);
+    formData.append("species", form.species.value);
+    formData.append("pet_age", form.age.value);
+    formData.append("pet_gender", form.gender.value);
+    formData.append("pet_condition", form.condition.value);
+    formData.append("last_visit", form.lastVisit.value);
+    formData.append("diagnosis", form.diagnosis.value);
+
+    // ✅ Add uploaded file
+    if (form.petImage.files[0]) {
+      formData.append("photo", form.petImage.files[0]);
+    }
+
+    try {
+      const res = await axios.post(`${APIENDPOINT}/add_pet/pet_medical_records`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (res.data.success) {
+        // ✅ Refresh pets
+        const updatedPets = await axios.get(`${APIENDPOINT}/fetch/pet_medical_records`);
+        setPets(updatedPets.data);
+        setShowAddPetModal(false);
+        form.reset();
+      }
+    } catch (err) {
+      console.error("Error adding pet:", err);
+    }
   };
 
   const handleEdit = (data) => {
@@ -68,27 +104,48 @@ export default function PetRecords() {
     setShowEditModal(true);
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
     const form = e.target;
-    const updatedPet = {
-      ...editData,
-      ownerName: form.ownerName.value,
-      name: form.name.value,
-      species: form.species.value,
-      age: form.age.value,
-      gender: form.gender.value,
-      condition: form.condition.value,
-      lastVisit: form.lastVisit.value,
-      diagnosis: form.diagnosis.value
-    };
-    const updatedPets = pets.map((pet) =>
-      pet.id === updatedPet.id ? updatedPet : pet
-    );
-    setPets(updatedPets);
-    setShowEditModal(false);
-    setEditData(null);
+    const formData = new FormData();
+
+    formData.append("owner_name", form.ownerName.value);
+    formData.append("user_name", form.userName.value);
+    formData.append("pet_name", form.name.value);
+    formData.append("species", form.species.value);
+    formData.append("pet_age", form.age.value);
+    formData.append("pet_gender", form.gender.value);
+    formData.append("pet_condition", form.condition.value);
+    formData.append("last_visit", form.lastVisit.value);
+    formData.append("diagnosis", form.diagnosis.value);
+
+    // ✅ Only update photo if user selected one
+    if (form.petImage.files[0]) {
+      formData.append("photo", form.petImage.files[0]);
+    }
+
+    try {
+      const res = await axios.put(`${APIENDPOINT}/edit_pet/pet_medical_records/${editData.id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (res.data.success) {
+        // ✅ Refresh pets
+        const updatedPets = await axios.get(`${APIENDPOINT}/fetch/pet_medical_records`);
+        setPets(updatedPets.data);
+        setShowEditModal(false);
+        setEditData(null);
+      }
+    } catch (err) {
+      console.error("Error editing pet:", err);
+    }
   };
+
+  useEffect(() => {
+    axios.get(`${APIENDPOINT}/fetch/pet_medical_records`)
+      .then((res) => setPets(res.data))
+      .catch((err) => console.error("Error fetching pets:", err));
+  }, []);
 
   const filteredPets = pets.filter((pet) => {
     const term = searchTerm.toLowerCase();
@@ -118,32 +175,96 @@ export default function PetRecords() {
     setNewRecord({ ...newRecord, [name]: value });
   };
 
-  const handleNewRecordSubmit = (e) => {
+  const handleNewRecordSubmit = async (e) => {
     e.preventDefault();
-    const updatedPets = pets.map((pet) =>
-      pet.id === selectedPet.id
-        ? {
-          ...pet,
-          checkups: [...(pet.checkups || []), newRecord]
-        }
-        : pet
-    );
-    setPets(updatedPets);
-    setSelectedPet((prev) => ({
-      ...prev,
-      checkups: [...(prev.checkups || []), newRecord]
-    }));
-    setNewRecord({
-      day: '',
-      date: '',
-      service: '',
-      complaint: '',
-      diagnosis: '',
-      status: '',
-      completed: ''
-    });
-    setAddingRecord(false);
+
+    try {
+      const res = await axios.post(`${APIENDPOINT}/add_pet_history/pet_medical_records`, {
+        id_pet_medical_records: selectedPet.id,
+        owner_email: newRecord.ownerEmail,
+        owner_address: newRecord.ownerAddress,
+        owner_phonenumber: newRecord.ownerPhoneNum,
+        day: newRecord.day,
+        date_visit: newRecord.date,
+        service_type: newRecord.service,
+        main_complaint: newRecord.complaint,
+        pet_diagnosis: newRecord.diagnosis,
+        treatment_status: newRecord.status,
+        date_completed_on: newRecord.completed,
+        nursing_issues: newRecord.nursingIssues || '',
+        care_plan: newRecord.carePlan || '',
+        local_status_check: newRecord.localStatus || '',
+        additional_complaint: newRecord.additionalComplaint || '',
+        weight: newRecord.weight || '',
+        height: newRecord.height || '',
+        bmi: newRecord.bmi || '',
+        blood_pressure: newRecord.bloodPressure || '',
+        pulse: newRecord.pulse || '',
+        medications: newRecord.medications || '',
+        veterinarian_name: "Dr. Default" // or get from logged-in vet context
+      });
+
+      if (res.data.success) {
+        // ✅ Refetch updated history
+        const history = await axios.get(`${APIENDPOINT}/fetch/visit_history/${selectedPet.id}`);
+        setSelectedPet({ ...selectedPet, checkups: history.data });
+
+        setAddingRecord(false);
+        setNewRecord({
+          day: '',
+          date: '',
+          service: '',
+          complaint: '',
+          diagnosis: '',
+          status: '',
+          completed: ''
+        });
+      }
+    } catch (err) {
+      console.error("Error adding new visit history:", err);
+    }
   };
+
+  const handleUpdateVisit = async () => {
+    try {
+      const res = await axios.put(
+        `${APIENDPOINT}/edit_pet_history/pet_medical_records/${selectedVisit.history_id}`,
+        {
+          owner_email: selectedVisit.ownerEmail,
+          owner_address: selectedVisit.ownerAddress,
+          owner_phonenumber: selectedVisit.ownerPhoneNum,
+          day: selectedVisit.day,
+          date_visit: selectedVisit.date,   // yyyy-MM-dd format
+          service_type: selectedVisit.service,
+          main_complaint: selectedVisit.complaint,
+          pet_diagnosis: selectedVisit.diagnosis,
+          treatment_status: selectedVisit.status,
+          date_completed_on: selectedVisit.completed,
+          nursing_issues: selectedVisit.nursingIssues || '',
+          care_plan: selectedVisit.carePlan || '',
+          local_status_check: selectedVisit.localStatus || '',
+          additional_complaint: selectedVisit.additionalComplaint || '',
+          weight: selectedVisit.weight || '',
+          height: selectedVisit.height || '',
+          bmi: selectedVisit.bmi || '',
+          blood_pressure: selectedVisit.bloodPressure || '',
+          pulse: selectedVisit.pulse || '',
+          medications: selectedVisit.medications || '',
+          veterinarian_name: selectedVisit.veterinarianName || 'Not Assigned',
+        }
+      );
+
+      if (res.data.success) {
+        // ✅ Refresh history
+        const history = await axios.get(`${APIENDPOINT}/fetch/visit_history/${selectedPet.id}`);
+        setSelectedPet({ ...selectedPet, checkups: history.data });
+        setSelectedVisit(null);
+      }
+    } catch (err) {
+      console.error("Error updating visit history:", err);
+    }
+  };
+
 
   return (
     <div className="pet-records-wrapper">
@@ -183,7 +304,7 @@ export default function PetRecords() {
             <div className="pet-records-row" key={pet.id}>
               <div>{pet.ownerName}</div>
               <div>
-                <img src={pet.photo} alt={pet.name} className="pet-thumb" />
+                <img src={`${APIENDPOINT}/uploads/${pet.photo}`} alt={pet.name} className="pet-thumb" />
               </div>
               <div>{pet.name}</div>
               <div>{pet.species}</div>
@@ -240,6 +361,9 @@ export default function PetRecords() {
 
             {addingRecord && (
               <form className="new-record-form" onSubmit={handleNewRecordSubmit}>
+                <input type="text" name="email" placeholder="Email" value={newRecord.ownerEmail} onChange={handleNewRecordChange} required />
+                <input type="text" name="address" placeholder="Address" value={newRecord.ownerAddress} onChange={handleNewRecordChange} required />
+                <input type="text" name="phone_number" placeholder="Phone Number" value={newRecord.ownerAddress} onChange={handleNewRecordChange} required />
                 <input type="text" name="day" placeholder="Day" value={newRecord.day} onChange={handleNewRecordChange} required />
                 <input type="date" name="date" placeholder="Date" value={newRecord.date} onChange={handleNewRecordChange} required />
                 <input type="text" name="service" placeholder="Service Type" value={newRecord.service} onChange={handleNewRecordChange} required />
@@ -332,11 +456,29 @@ export default function PetRecords() {
                 />
               </div>
               <div className="detail-field">
+                <div className="detail-label">Owner Address:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.ownerAddress || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, ownerAddress: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
                 <div className="detail-label">Age:</div>
                 <input
                   type="number"
                   value={selectedPet.age}
                   disabled
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Owner Phone Number:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.ownerPhoneNum || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, ownerPhoneNum: e.target.value })}
                   className="editable-input"
                 />
               </div>
@@ -350,11 +492,20 @@ export default function PetRecords() {
                 />
               </div>
               <div className="detail-field">
+                <div className="detail-label">Owner Email:</div>
+                <input
+                  type="text"
+                  value={selectedVisit.ownerEmail || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, ownerEmail: e.target.value })}
+                  className="editable-input"
+                />
+              </div>
+              <div className="detail-field">
                 <div className="detail-label">Date Admitted:</div>
                 <input
                   type="date"
-                  value={selectedVisit.admittedDate || ''}
-                  onChange={(e) => setSelectedVisit({ ...selectedVisit, admittedDate: e.target.value })}
+                  value={selectedVisit.date || ''}
+                  onChange={(e) => setSelectedVisit({ ...selectedVisit, date: e.target.value })}
                   className="editable-input"
                 />
               </div>
@@ -478,29 +629,16 @@ export default function PetRecords() {
 
               <div className="signature-block">
                 <div className="signature-line"></div>
-                <div className="signature-caption">Veterinarian: Dr. Angela Rivera</div>
+                <div className="signature-caption">
+                  {selectedVisit.veterinarianName || 'Not Assigned'}
+                </div>
               </div>
 
               <div className="detail-actions">
                 <button
                   className="save-btn"
                   onClick={() => {
-                    const updatedPets = pets.map((pet) => {
-                      if (pet.id === selectedPet.id) {
-                        return {
-                          ...pet,
-                          checkups: pet.checkups.map((visit) =>
-                            visit.date === selectedVisit.date &&
-                              visit.service === selectedVisit.service
-                              ? selectedVisit
-                              : visit
-                          ),
-                        };
-                      }
-                      return pet;
-                    });
-                    setPets(updatedPets);
-                    setSelectedVisit(null);
+                    handleUpdateVisit()
                   }}
                 >
                   Save Changes
@@ -521,9 +659,9 @@ export default function PetRecords() {
               {/* Left Side: Image */}
               <div className="add-pet-image-upload">
                 <label htmlFor="petImage" className="add-image-upload-box">
-                  <input type="file" id="petImage" name="image" accept="image/*" hidden />
+                  <input type="file" id="petImage" name="petImage" accept="image/*" hidden onChange={handleImageChange} />
                   <img
-                    src="/images/494821804_3615220685439850_5750128201232600483_n.png"
+                    src={previewImage || "/images/upload_placehold.jpg"}
                     alt="Upload"
                     className="add-image-placeholder"
                   />
@@ -534,6 +672,10 @@ export default function PetRecords() {
               <div className="add-pet-form-fields">
                 <div className="add-form-group">
                   <input name="ownerName" type="text" placeholder="Owner Name" required />
+                  <input name="userName" type="text" placeholder="Username" required />
+                </div>
+
+                <div className="add-form-group">
                   <input name="name" type="text" placeholder="Pet Name" required />
                   <input name="age" type="number" placeholder="Age" required />
                 </div>
@@ -574,33 +716,45 @@ export default function PetRecords() {
           <div className="pet-modal-edit">
             <button className="close-btn" onClick={() => setShowEditModal(false)}>×</button>
             <h3 className="edit-modal-title">Edit Pet Record</h3>
-            <form onSubmit={handleAddPet} className="edit-pet-form-grid">
+            <form onSubmit={handleEditSubmit} className="edit-pet-form-grid">
               {/* Left Side: Image */}
               <div className="edit-pet-image-upload">
                 <label htmlFor="petImage" className="edit-image-upload-box">
-                  <input type="file" id="petImage" name="image" accept="image/*" hidden />
-                  <img
-                    src="/images/494821804_3615220685439850_5750128201232600483_n.png"
-                    alt="Upload"
-                    className="edit-image-placeholder"
-                  />
+                  <input type="file" id="petImage" name="petImage" accept="image/*" hidden />
+                  {editData?.photo ? (
+                    <img
+                      src={`${APIENDPOINT}/uploads/${editData.photo}`}
+                      alt="Current Pet"
+                      className="edit-image-placeholder"
+                    />
+                  ) : (
+                    <img
+                      src="/images/upload-placeholder.png"
+                      alt="Upload"
+                      className="edit-image-placeholder"
+                    />
+                  )}
                 </label>
               </div>
               {/* Right Side: Inputs */}
               <div className="edit-pet-form-fields">
                 <div className="edit-form-group">
-                  <input name="ownerName" type="text" placeholder="Owner Name" required />
-                  <input name="name" type="text" placeholder="Pet Name" required />
-                  <input name="age" type="number" placeholder="Age" required />
+                  <input name="ownerName" type="text" placeholder="Owner Name" defaultValue={editData?.ownerName} required />
+                  <input name="userName" type="text" placeholder="Username" defaultValue={editData?.userName} required />
                 </div>
 
                 <div className="edit-form-group">
-                  <select name="species" required defaultValue="">
+                  <input name="name" type="text" placeholder="Pet Name" defaultValue={editData?.name} required />
+                  <input name="age" type="number" placeholder="Age" defaultValue={editData?.age} required />
+                </div>
+
+                <div className="edit-form-group">
+                  <select name="species" required defaultValue={editData?.species || ""}>
                     <option value="" disabled>Select Species</option>
                     <option value="Dog">Dog</option>
                     <option value="Cat">Cat</option>
                   </select>
-                  <select name="gender" required defaultValue="">
+                  <select name="gender" required defaultValue={editData?.gender || ""}>
                     <option value="" disabled>Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
@@ -608,16 +762,16 @@ export default function PetRecords() {
                 </div>
 
                 <div className="edit-form-group">
-                  <input name="condition" type="text" placeholder="Condition" required />
-                  <input name="lastVisit" type="date" placeholder="Last Visit" required />
+                  <input name="condition" type="text" placeholder="Condition" defaultValue={editData?.condition} required />
+                  <input name="lastVisit" type="date" placeholder="Last Visit" defaultValue={editData?.lastVisit} required />
                 </div>
 
                 <div className="edit-form-group">
-                  <input name="diagnosis" type="text" placeholder="Diagnosis" required />
+                  <input name="diagnosis" type="text" placeholder="Diagnosis" defaultValue={editData?.diagnosis} required />
                 </div>
 
                 <div className="edit-button-row">
-                  <button type="submit" className="edit-add-btn">Add Pet</button>
+                  <button type="submit" className="edit-add-btn">Update Pet</button>
                   <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
                 </div>
               </div>

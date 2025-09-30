@@ -1,13 +1,13 @@
 import React from "react";
 import { JitsiMeeting } from "@jitsi/react-sdk";
 
-const JitsiWrapper = ({ roomName, displayName, email, jwt, onApiReady }) => {
+const JitsiWrapper = ({ roomName, displayName, email, jwt, onApiReady, onCallEnd }) => {
   return (
     <div style={{ height: "600px", width: "100%" }}>
       <JitsiMeeting
         domain="8x8.vc"
         roomName={roomName}
-        jwt={jwt} 
+        jwt={jwt}
         configOverwrite={{
           startWithAudioMuted: true,
           disableModeratorIndicator: false,
@@ -16,8 +16,8 @@ const JitsiWrapper = ({ roomName, displayName, email, jwt, onApiReady }) => {
           TOOLBAR_BUTTONS: ["microphone", "camera", "chat", "raisehand", "hangup"],
         }}
         userInfo={{
-          displayName: displayName,
-          email: email,
+          displayName,
+          email,
         }}
         getIFrameRef={(iframeRef) => {
           iframeRef.style.height = "80vh";
@@ -27,6 +27,11 @@ const JitsiWrapper = ({ roomName, displayName, email, jwt, onApiReady }) => {
           if (onApiReady) {
             onApiReady(externalApi);
           }
+
+          // ✅ Detect when call ends inside Jitsi
+          externalApi.addEventListener("videoConferenceLeft", () => {
+            if (onCallEnd) onCallEnd();
+          });
         }}
       />
     </div>

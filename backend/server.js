@@ -34,8 +34,17 @@ const JITSI_APP_API_KEY = 'vpaas-magic-cookie-d26ed00354e841dbabe6a987da039e25/a
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use('/uploads', express.static('tmp/uploads'));
+app.use('/uploads', express.static('/tmp/uploads'));
 app.use("/uploads", express.static(path.join(__dirname, "tmp/uploads")));
+
+function formatDate(date) {
+  if (!date) return null;
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${year}-${month}-${day}`;  // ✅ YYYY-MM-DD
+}
 
 // MySQL connection
 const db = mysql.createConnection({
@@ -787,25 +796,30 @@ app.post('/auth/google', async (req, res) => {
   }
 });
 
-app.post('/online_consult', async (req, res) => {
-  const { owner_name, pet_name, pet_type, concern_description, consult_type, file_payment, file_type } = req.body;
+app.post('/online_consult', upload.single('file_payment'), (req, res) => {
+  const { owner_name, pet_name, pet_type, concern_description, consult_type } = req.body;
   const channel_consult_ID = "consult" + Date.now();
 
+  const filePath = `/uploads/${req.file.filename}`;
+  const fileType = req.file.mimetype;
+
   try {
-    const sqlScript = `INSERT INTO online_consultation_table
-      (channel_consult_ID, Owner_name, pet_name, pet_type, 
-      payment_proof, concern_text, type_consult, fileType)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sqlScript = `
+      INSERT INTO online_consultation_table
+        (channel_consult_ID, Owner_name, pet_name, pet_type, 
+         payment_proof, concern_text, type_consult, fileType)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
 
     db.query(sqlScript, [
       channel_consult_ID,
       owner_name,
       pet_name,
       pet_type,
-      file_payment,        // store Base64 string directly
+      filePath,
       concern_description,
       consult_type,
-      file_type            // store the type (pdf/image)
+      fileType
     ], (err, result) => {
       if (err) {
         console.error("Error uploading data:", err);
@@ -834,32 +848,23 @@ app.get('/online_consult_fetch', (req, res) => {
         return res.status(500).json({ error: "Database error" });
       }
 
-      const formattedResults = results.map((item) => {
-        let fileBase64 = null;
-        if (item.payment_proof) {
-          const mimeType = item.fileType === 'pdf' ? 'application/pdf' : 'image/jpeg';
-          // ✅ just wrap it once
-          fileBase64 = `data:${mimeType};base64,${item.payment_proof}`;
-        }
-
-        return {
-          id: item.consult_id,
-          channelConsult: item.channel_consult_ID,
-          petName: item.pet_name,
-          petType: item.pet_type,
-          concern: item.concern_text,
-          consultationType: item.type_consult,
-          ownerName: item.Owner_name,
-          paymentProof: fileBase64
-        };
-      });
-
+      const formattedResults = results.map((item) => ({
+        id: item.consult_id,
+        channelConsult: item.channel_consult_ID,
+        petName: item.pet_name,
+        petType: item.pet_type,
+        concern: item.concern_text,
+        consultationType: item.type_consult,
+        ownerName: item.Owner_name,
+        paymentProof: `http://localhost:5000${item.payment_proof}`,
+        fileType: item.fileType,
+      }));
 
       res.json({ fetchData: formattedResults });
     });
   } catch (err) {
-    console.error('Server error:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("Server error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -1208,54 +1213,242 @@ app.put('/appointments/:id/status', (req, res) => {
 });
 
 app.get('/fetch/pet_medical_records', (req, res) => {
-  const medical_record = `SELECT * FROM pet_medical_records`;
-  const history = `SELECT * FROM visit_history`;
+  const sql = `SELECT * FROM pet_medical_records`;
 
-  // Fetch medical records first
-  db.query(medical_record, (err, recordsResults) => {
+  db.query(sql, (err, results) => {
     if (err) {
       console.error("Error fetching medical records:", err);
       return res.status(500).json({ error: "Database error" });
     }
 
-    // Fetch histories next
-    db.query(history, (err, historyResults) => {
-      if (err) {
-        console.error("Error fetching visit history:", err);
-        return res.status(500).json({ error: "Database error" });
-      }
+    const records = results.map((r) => ({
+      id: r.id_medical_record,
+      ownerName: r.owner_name,
+      userName: r.owner_username,
+      photo: r.photo_pet,
+      name: r.pet_name,
+      species: r.species,
+      age: r.pet_age,
+      gender: r.pet_gender,
+      condition: r.pet_condition,
+      lastVisit: formatDate(r.last_visit),
+      diagnosis: r.diagnosis,
+    }));
 
-      // Map histories
-      const histories = historyResults.map((h) => ({
-        history_id: h.id_pet_history,
-        medical_id: h.id_pet_medical_records,
-        day: h.day,
-        dateVisit: h.date_visit,
-        serviceType: h.service_type,
-        complaint: h.main_complaint,
-        petDiagnosis: h.pet_diagnosis,
-        status: h.treatment_status,
-        dateCompleted: h.date_completed_on,
-      }));
+    res.json(records);
+  });
+});
 
-      // Map records and attach histories
-      const records = recordsResults.map((r) => ({
-        id: r.id_medical_record,
-        ownerName: r.owner_name,
-        photo: r.photo_pet,
-        name: r.pet_name,
-        species: r.species,
-        age: r.pet_age,
-        gender: r.pet_gender,
-        condition: r.pet_condition,
-        lastVisit: r.last_visit,
-        diagnosis: r.diagnosis,
-        checkups: histories.filter((h) => h.medical_id === r.id_medical_record),
-      }));
+app.get('/fetch_user/pet_medical_records/:username', (req, res) => {
+  const { username } = req.params;
+  const sql = `SELECT * FROM pet_medical_records WHERE owner_username = ?`;
 
-      // ✅ Send combined response ONCE
-      res.json(records);
-    });
+  db.query(sql, [username], (err, results) => {
+    if (err) {
+      console.error("Error fetching medical records:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    const records = results.map((r) => ({
+      id: r.id_medical_record,
+      ownerName: r.owner_name,
+      userName: r.owner_username,
+      photo: r.photo_pet,
+      name: r.pet_name,
+      species: r.species,
+      age: r.pet_age,
+      gender: r.pet_gender,
+      condition: r.pet_condition,
+      lastVisit: formatDate(r.last_visit),
+      diagnosis: r.diagnosis,
+    }));
+
+    res.json(records);
+  });
+});
+
+app.get('/fetch/visit_history/:medical_id', (req, res) => {
+  const { medical_id } = req.params;
+  const sql = `SELECT * FROM visit_history WHERE id_pet_medical_records = ?`;
+
+  db.query(sql, [medical_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching visit history:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    const histories = results.map((h) => ({
+      history_id: h.id_pet_history,
+      medical_id: h.id_pet_medical_records,
+      ownerEmail: h.owner_email,
+      ownerAddress: h.owner_address,
+      ownerPhoneNum: h.owner_phone,
+      day: h.day,
+      date: formatDate(h.date_visit),
+      service: h.service_type,
+      complaint: h.main_complaint,
+      diagnosis: h.pet_diagnosis,
+      status: h.treatment_status,
+      completed: formatDate(h.date_completed_on),
+      nursingIssues: h.nursing_issues,
+      carePlan: h.care_plan,
+      localStatus: h.local_status_check,
+      additionalComplaint: h.additional_complaint,
+      weight: h.weight,
+      height: h.height,
+      bmi: h.bmi,
+      bloodPressure: h.blood_pressure,
+      pulse: h.pulse,
+      medications: h.medications,
+      veterinarianName: h.veterinarian_name,
+    }));
+
+    res.json(histories);
+  });
+});
+
+app.post('/add_pet/pet_medical_records', upload.single('photo'), (req, res) => {
+  const { owner_name, user_name, pet_name, species, pet_age, pet_gender, pet_condition, last_visit, diagnosis } = req.body;
+  const photo = req.file ? req.file.filename : null;
+
+  if (!owner_name || !pet_name || !species || !pet_age || !pet_gender || !pet_condition || !last_visit || !diagnosis) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
+
+  const sql = `
+    INSERT INTO pet_medical_records 
+    (owner_name, owner_username, photo_pet, pet_name, species, pet_age, pet_gender, pet_condition, last_visit, diagnosis)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+  db.query(sql, [owner_name, user_name, photo, pet_name, species, pet_age, pet_gender, pet_condition, last_visit, diagnosis], (err, result) => {
+    if (err) {
+      console.error("Error adding pet:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+    res.json({ success: true, id: result.insertId });
+  });
+});
+
+app.put('/edit_pet/pet_medical_records/:id', upload.single('photo'), (req, res) => {
+  const { id } = req.params;
+  const { owner_name, user_name, pet_name, species, pet_age, pet_gender, pet_condition, last_visit, diagnosis } = req.body;
+  const photo = req.file ? req.file.filename : null;
+
+  let sql = `
+    UPDATE pet_medical_records 
+    SET owner_name=?, owner_username=?, pet_name=?, species=?, pet_age=?, pet_gender=?, pet_condition=?, last_visit=?, diagnosis=?
+  `;
+  const values = [owner_name, user_name, pet_name, species, pet_age, pet_gender, pet_condition, last_visit, diagnosis];
+
+  if (photo) {
+    sql += `, photo_pet=?`;
+    values.push(photo);
+  }
+
+  sql += ` WHERE id_medical_record=?`;
+  values.push(id);
+
+  db.query(sql, values, (err, result) => {
+    if (err) {
+      console.error("Error updating pet:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+    res.json({ success: true, message: "Pet record updated" });
+  });
+});
+
+app.post('/add_pet_history/pet_medical_records', (req, res) => {
+  const {
+    id_pet_medical_records,
+    owner_email,
+    owner_address,
+    owner_phonenumber,
+    day,
+    date_visit,
+    service_type,
+    main_complaint,
+    pet_diagnosis,
+    treatment_status,
+    date_completed_on,
+    nursing_issues,
+    care_plan,
+    local_status_check,
+    additional_complaint,
+    weight,
+    height,
+    bmi,
+    blood_pressure,
+    pulse,
+    medications,
+    veterinarian_name
+  } = req.body;
+
+  const sql = `
+    INSERT INTO visit_history 
+    (id_pet_medical_records, owner_email, owner_address, owner_phone, day, date_visit, service_type, main_complaint, pet_diagnosis, treatment_status, date_completed_on, 
+     nursing_issues, care_plan, local_status_check, additional_complaint, weight, height, bmi, blood_pressure, pulse, medications, veterinarian_name) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+  const values = [
+    id_pet_medical_records, owner_email, owner_address, owner_phonenumber, day, date_visit, service_type, main_complaint, pet_diagnosis, treatment_status, date_completed_on,
+    nursing_issues, care_plan, local_status_check, additional_complaint, weight, height, bmi, blood_pressure, pulse, medications, veterinarian_name
+  ];
+
+  db.query(sql, values, (err, result) => {
+    if (err) {
+      console.error("Error adding visit history:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+    res.json({ success: true, id: result.insertId });
+  });
+});
+
+app.put('/edit_pet_history/pet_medical_records/:id', (req, res) => {
+  const { id } = req.params;
+  const {
+    owner_email,
+    owner_address,
+    owner_phonenumber,
+    day,
+    date_visit,
+    service_type,
+    main_complaint,
+    pet_diagnosis,
+    treatment_status,
+    date_completed_on,
+    nursing_issues,
+    care_plan,
+    local_status_check,
+    additional_complaint,
+    weight,
+    height,
+    bmi,
+    blood_pressure,
+    pulse,
+    medications,
+    veterinarian_name
+  } = req.body;
+
+  const sql = `
+    UPDATE visit_history SET
+    owner_email=?, owner_address=?, owner_phone=?, day=?, date_visit=?, service_type=?, main_complaint=?, pet_diagnosis=?, treatment_status=?, date_completed_on=?, 
+    nursing_issues=?, care_plan=?, local_status_check=?, additional_complaint=?, weight=?, height=?, bmi=?, 
+    blood_pressure=?, pulse=?, medications=?, veterinarian_name=?
+    WHERE id_pet_history=?
+  `;
+
+  const values = [
+    owner_email, owner_address, owner_phonenumber, day, date_visit, service_type, main_complaint, pet_diagnosis, treatment_status, date_completed_on,
+    nursing_issues, care_plan, local_status_check, additional_complaint, weight, height, bmi,
+    blood_pressure, pulse, medications, veterinarian_name, id
+  ];
+
+  db.query(sql, values, (err, result) => {
+    if (err) {
+      console.error("Error updating visit history:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+    res.json({ success: true, message: "Visit history updated" });
   });
 });
 
@@ -1280,7 +1473,7 @@ app.get('/fetch/orders', (req, res) => {
       console.error("Error fetching inventory:", err);
       return res.status(500).json({ success: false, error: "Database error" });
     }
-    res.json({ success: true, data: results});
+    res.json({ success: true, data: results });
   });
 });
 

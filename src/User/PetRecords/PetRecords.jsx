@@ -1,16 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { FaPlus, FaRegEye } from 'react-icons/fa';
-import petsData from '../../data/petsData.json';
 import './PetRecords.css';
+import { UserContext } from '../../hook/authContext';
+import axios from 'axios';
 
 export default function PetRecords() {
-  const [pets] = useState(petsData);
+  const { user } = useContext(UserContext);
+  const [pets, setPets] = useState([]);
   const [selectedPet, setSelectedPet] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalSearchTerm, setModalSearchTerm] = useState('');
   const [selectedVisit, setSelectedVisit] = useState(null);
 
-  const handleView = (pet) => setSelectedPet(pet);
+  const APIENDPOINT = 'http://localhost:5000';
+
+  useEffect(() => {
+    if (!user?.username) return;
+
+    const fetchPets = async () => {
+      try {
+        const res = await axios.get(`${APIENDPOINT}/fetch_user/pet_medical_records/${user.username}`);
+        setPets(res.data);
+      } catch (err) {
+        console.error('Error fetching pet records:', err);
+      }
+    };
+
+    fetchPets();
+  }, [user]);
+
+  const handleView = async (pet) => {
+    try {
+      const res = await axios.get(`${APIENDPOINT}/fetch/visit_history/${pet.id}`);
+      setSelectedPet({ ...pet, checkups: res.data });
+    } catch (err) {
+      console.error('Error fetching visit history:', err);
+    }
+  };
+
   const handleCloseModal = () => {
     setSelectedPet(null);
     setModalSearchTerm('');
@@ -53,47 +80,51 @@ export default function PetRecords() {
         </div>
       </div>
 
-   <div className="pet-records-table">
-  <div className="pet-records-header">
-    <div>Owner Name</div>
-    <div>Photo</div>
-    <div>Name</div>
-    <div>Species</div>
-    <div>Age</div>
-    <div>Gender</div>
-    <div>Condition</div>
-    <div>Last Visit</div>
-    <div>Diagnosis</div>
-    <div>Action</div>
-  </div>
+      <div className="pet-records-table">
+        <div className="pet-records-header">
+          <div>Owner Name</div>
+          <div>Photo</div>
+          <div>Name</div>
+          <div>Species</div>
+          <div>Age</div>
+          <div>Gender</div>
+          <div>Condition</div>
+          <div>Last Visit</div>
+          <div>Diagnosis</div>
+          <div>Action</div>
+        </div>
 
-  {filteredPets.map((pet) => (
-    <div className="pet-records-row" key={pet.id}>
-      <div>{pet.ownerName}</div> 
-      <div>
-        <img src={pet.photo} alt={pet.name} className="pet-thumb" />
+        {filteredPets.length > 0 ? (
+          filteredPets.map((pet) => (
+            <div className="pet-records-row" key={pet.id}>
+              <div>{pet.ownerName}</div>
+              <div>
+                <img src={`${APIENDPOINT}/uploads/${pet.photo}`} alt={pet.name} className="pet-thumb" />
+              </div>
+              <div>{pet.name}</div>
+              <div>{pet.species}</div>
+              <div>{pet.age} yrs</div>
+              <div>{pet.gender}</div>
+              <div>{pet.condition}</div>
+              <div>{pet.lastVisit}</div>
+              <div className="diagnosis-text">
+                {pet.diagnosis.length > 30 ? pet.diagnosis.slice(0, 30) + '…' : pet.diagnosis}
+              </div>
+              <div>
+                <button
+                  className="aksi-btn"
+                  title="View Record"
+                  onClick={() => handleView(pet)}
+                >
+                  <FaRegEye size={16} />
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="no-records">Records not found.</div>
+        )}
       </div>
-      <div>{pet.name}</div>
-      <div>{pet.species}</div>
-      <div>{pet.age} yrs</div>
-      <div>{pet.gender}</div>
-      <div>{pet.condition}</div>
-      <div>{pet.lastVisit}</div>
-      <div className="diagnosis-text">
-        {pet.diagnosis.length > 30 ? pet.diagnosis.slice(0, 30) + '…' : pet.diagnosis}
-      </div>
-      <div>
-        <button
-          className="aksi-btn"
-          title="View Record"
-          onClick={() => handleView(pet)}
-        >
-          <FaRegEye size={16} />
-        </button>
-      </div>
-    </div>
-  ))}
-</div>
 
 
       {/* Visit History Modal */}
@@ -161,134 +192,131 @@ export default function PetRecords() {
       )}
 
       {/* Full Visit Detail Modal (Printable) */}
-{selectedVisit && (
-  <div className="visit-detail-modal-overlay">
-    <div className="visit-detail-modal">
-      <button className="close-btn" onClick={() => setSelectedVisit(null)}>×</button>
-      <button className="print-btn" onClick={() => window.print()}>Print</button>
+      {selectedVisit && (
+        <div className="visit-detail-modal-overlay">
+          <div className="visit-detail-modal">
+            <button className="close-btn" onClick={() => setSelectedVisit(null)}>×</button>
+            <button className="print-btn" onClick={() => window.print()}>Print</button>
 
-      <div className="visit-detail-content scrollable-print">
-        {/* Printable Header */}
-        <div className="mr-header-section">
-          <img src="/images/LandingPage/rivera-logo.png" alt="Clinic Logo" className="mr-clinic-logo" />
-          <div className="mr-clinic-details">
-            <h1>PetCare Animal Clinic</h1>
-            <p>123 Veterinary Street, Bocaue, Bulacan</p>
-            <p>Contact: (044) 123-4567 | Email: petcare@clinic.com</p>
-            <p>Date: {new Date().toLocaleDateString()}</p>
+            <div className="visit-detail-content scrollable-print">
+              {/* Printable Header */}
+              <div className="mr-header-section">
+                <img src="/images/LandingPage/rivera-logo.png" alt="Clinic Logo" className="mr-clinic-logo" />
+                <div className="mr-clinic-details">
+                  <h1>PetCare Animal Clinic</h1>
+                  <p>123 Veterinary Street, Bocaue, Bulacan</p>
+                  <p>Contact: (044) 123-4567 | Email: petcare@clinic.com</p>
+                  <p>Date: {new Date().toLocaleDateString()}</p>
+                </div>
+              </div>
+
+              {/* Patient Medical Summary */}
+              <h2 className="section-title">Patient Medical Summary</h2>
+
+              <div className="detail-field">
+                <div className="detail-label">Pet Name:</div>
+                <div className="detail-value">{selectedPet.name}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Owner Name:</div>
+                <div className="detail-value">{selectedPet.ownerName}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Species:</div>
+                <div className="detail-value">{selectedPet.species}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Owner Address:</div>
+                <div className="detail-value">{selectedVisit.ownerAddress}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Age:</div>
+                <div className="detail-value">{selectedPet.age}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Owner Phone Number:</div>
+                <div className="detail-value">{selectedVisit.ownerPhoneNum}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Diagnosis:</div>
+                <div className="detail-value">{selectedVisit.diagnosis}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Owner Email:</div>
+                <div className="detail-value">{selectedVisit.ownerEmail}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Date Admitted:</div>
+                <div className="detail-value">{selectedVisit.date || 'N/A'}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Date Discharged:</div>
+                <div className="detail-value">{selectedVisit.completed}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Patient Status:</div>
+                <div className="detail-value">{selectedVisit.status}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Nursing Issues:</div>
+                <div className="detail-value">{selectedVisit.nursingIssues}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Care Plan:</div>
+                <div className="detail-value">{selectedVisit.carePlan}</div>
+              </div>
+
+              {/* Medical Assessment */}
+              <h2 className="section-title">Medical Assessment</h2>
+              <div className="detail-field">
+                <div className="detail-label">Main Complaint:</div>
+                <div className="detail-value">{selectedVisit.complaint}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Additional Complaints:</div>
+                <div className="detail-value">{selectedVisit.additionalComplaint}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Weight:</div>
+                <div className="detail-value">{selectedVisit.weight}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Height:</div>
+                <div className="detail-value">{selectedVisit.height}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">BMI:</div>
+                <div className="detail-value">{selectedVisit.bmi}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Blood Pressure:</div>
+                <div className="detail-value">{selectedVisit.bloodPressure}</div>
+              </div>
+              <div className="detail-field">
+                <div className="detail-label">Pulse:</div>
+                <div className="detail-value">{selectedVisit.pulse}</div>
+              </div>
+
+              {/* Prescriptions */}
+              <h2 className="section-title">Prescriptions</h2>
+              <div className="detail-field">
+                <div className="detail-label">Medications:</div>
+                <div className="detail-value">
+                  <ul style={{ paddingLeft: '1rem', margin: 0 }}>
+                    <li>{selectedVisit.medications}</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Signature */}
+              <div className="signature-block">
+                <div className="signature-line"></div>
+                <div className="signature-caption">Veterinarian: {selectedVisit.veterinarianName || 'Not Assigned'}</div>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Patient Medical Summary */}
-        <h2 className="section-title">Patient Medical Summary</h2>
-       
-        <div className="detail-field">
-          <div className="detail-label">Pet Name:</div>
-          <div className="detail-value">{selectedPet.name}</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Owner Name:</div>
-          <div className="detail-value">{selectedPet.ownerName}</div>
-        </div>
-          <div className="detail-field">
-          <div className="detail-label">Species:</div>
-          <div className="detail-value">{selectedPet.species}</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Owner Address:</div>
-          <div className="detail-value">{selectedPet.ownerAddress}</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Age:</div>
-          <div className="detail-value">{selectedPet.age}</div>
-        </div>
-         <div className="detail-field">
-          <div className="detail-label">Owner Phone Number:</div>
-          <div className="detail-value">{selectedPet.ownerPhoneNum}</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Diagnosis:</div>
-          <div className="detail-value">{selectedVisit.diagnosis}</div>
-        </div>
-         <div className="detail-field">
-          <div className="detail-label">Owner Email:</div>
-          <div className="detail-value">{selectedPet.ownerEmail}</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Date Admitted:</div>
-          <div className="detail-value">{selectedVisit.admittedDate || 'N/A'}</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Date Discharged:</div>
-          <div className="detail-value">{selectedVisit.completed}</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Patient Status:</div>
-          <div className="detail-value">{selectedVisit.status}</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Nursing Issues:</div>
-          <div className="detail-value">Acute/Chronic Pain, Hyperthermia, Nausea</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Care Plan:</div>
-          <div className="detail-value">Monitor Vital Signs, Wound Care, Interventions</div>
-        </div>
-
-        {/* Medical Assessment */}
-        <h2 className="section-title">Medical Assessment</h2>
-        <div className="detail-field">
-          <div className="detail-label">Main Complaint:</div>
-          <div className="detail-value">{selectedVisit.complaint}</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Additional Complaints:</div>
-          <div className="detail-value">None Reported</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Weight:</div>
-          <div className="detail-value">65 kg</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Height:</div>
-          <div className="detail-value">160 cm</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">BMI:</div>
-          <div className="detail-value">25.4 (Normal)</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Blood Pressure:</div>
-          <div className="detail-value">120/80 mmHg</div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Pulse:</div>
-          <div className="detail-value">75 bpm</div>
-        </div>
-
-        {/* Prescriptions */}
-        <h2 className="section-title">Prescriptions</h2>
-        <div className="detail-field">
-          <div className="detail-label">Medications:</div>
-          <div className="detail-value">
-            <ul style={{ paddingLeft: '1rem', margin: 0 }}>
-              <li>Paracetamol 500mg – 3× daily after meals</li>
-              <li>Oral Rehydration Salts – as needed</li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Signature */}
-        <div className="signature-block">
-          <div className="signature-line"></div>
-          <div className="signature-caption">Veterinarian: Dr. Angela Rivera</div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-
+      )}
     </div>
   );
 }

@@ -26,7 +26,7 @@ body {
   background: #edf2f7;
   padding: 2rem;
   border-radius: 12px;
-   height: 100vh; 
+  height: 100vh;
 }
 
 .pet-records-title {
@@ -66,11 +66,11 @@ body {
 
 .search-input {
   flex: 1 1;
-    padding: 0.75rem 1rem;
-    border: 1px solid #cbd5e0;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    background-color: white;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: white;
 }
 
 
@@ -95,7 +95,8 @@ body {
 
 .no-records {
   text-align: center;
-  grid-column: 1 / -1; /* span full width of grid */
+  grid-column: 1 / -1;
+  /* span full width of grid */
   padding: 12px;
   color: #888;
   font-style: italic;
@@ -130,8 +131,9 @@ body {
   cursor: pointer;
   margin-top: 10px;
 }
+
 .pet-records-toolbar {
-  
+
   align-items: center;
   margin-bottom: 1rem;
   flex-wrap: wrap;
@@ -172,7 +174,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -375,6 +377,7 @@ body {
   margin: 0.25rem 0;
   font-size: 0.875rem;
 }
+
 .checkup-history-row-style {
   display: flex;
   flex-direction: column;
@@ -416,6 +419,7 @@ body {
   justify-content: center;
   align-items: center;
 }
+
 .modal-search-input {
   width: 100%;
   padding: 8px 12px;
@@ -425,6 +429,7 @@ body {
   font-size: 14px;
   margin-top: 12px;
 }
+
 /* Visit Detail Modal Overlay */
 .visit-detail-modal-overlay {
   position: fixed;
@@ -545,13 +550,14 @@ body {
     display: none;
   }
 }
+
 .mr-header-section {
   display: flex;
   align-items: center;
   margin-bottom: 2rem;
-    border-bottom: none;
+  border-bottom: none;
   padding-bottom: 1rem;
- 
+
 }
 
 .mr-clinic-logo {
@@ -585,9 +591,9 @@ body {
 }
 
 .add-image-placeholder {
-  width: 40px;
-  height: 40px;
-  opacity: 0.5;
+  width: 180px;
+  height: auto;
+  opacity: 0.8;
 }
 
 .add-form-right {
@@ -618,9 +624,9 @@ body {
 }
 
 .edit-image-placeholder {
-  width: 40px;
-  height: 40px;
-  opacity: 0.5;
+  width: 180px;
+  height: auto;
+  opacity: 0.8;
 }
 
 .edit-form-right {
@@ -661,6 +667,7 @@ body {
     opacity: 0;
     transform: scale(0.92);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -674,6 +681,7 @@ body {
   border-radius: 4px;
   font-family: inherit;
 }
+
 .detail-field {
   margin-bottom: 12px;
 }

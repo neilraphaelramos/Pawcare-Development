@@ -44,50 +44,42 @@ const OnlineConsultation = () => {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-
-      reader.onloadend = () => {
-        const fullDataURL = reader.result;
-        const base64String = fullDataURL.split(",")[1];
-
-        // detect file type
-        let fileType = "";
-        if (file.type === "application/pdf") {
-          fileType = "pdf";
-        } else if (file.type.startsWith("image/")) {
-          fileType = "image";
-        } else {
-          fileType = "unknown";
-        }
-
-        // update state
-        setFillUp((prev) => ({
-          ...prev,
-          file_payment: base64String,
-          file_type: fileType,
-        }));
-      };
-
-      reader.readAsDataURL(file);
+      setFillUp((prev) => ({
+        ...prev,
+        file_payment: file, 
+      }));
     }
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const res = await axios.post("http://localhost:5000/online_consult", fillUp);
+      const formData = new FormData();
+      formData.append("owner_name", fillUp.owner_name);
+      formData.append("pet_name", fillUp.pet_name);
+      formData.append("pet_type", fillUp.pet_type);
+      formData.append("concern_description", fillUp.concern_description);
+      formData.append("consult_type", fillUp.consult_type);
+      formData.append("file_payment", fillUp.file_payment); // now the raw File
+
+      const res = await axios.post("http://localhost:5000/online_consult", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
       if (!res.data.success) {
         setFormSubmitted(false);
       } else {
         alert(res.data.message);
         const consultID = res.data.channel_consult_ID;
         setChannelConsultID(consultID);
+
         setFormSubmitted(true);
+        setStartCall(true);
 
         sessionStorage.setItem("channelConsultID", consultID);
         sessionStorage.setItem("isSubmitted", JSON.stringify(true));
+        sessionStorage.setItem("startCall", JSON.stringify(true));
       }
     } catch (err) {
       console.error("Error requesting consultation:", err);
@@ -102,11 +94,6 @@ const OnlineConsultation = () => {
     setStartCall(dataSetCall);
     setFormSubmitted(isSubmitted);
   }, [])
-
-  const handleOpenCall = () => {
-    setStartCall(true);
-    sessionStorage.setItem("startCall", JSON.stringify(true));
-  }
 
   const handleCloseCall = () => {
     sessionStorage.removeItem("channelConsultID");
@@ -200,72 +187,21 @@ const OnlineConsultation = () => {
         </form>
       ) : (
         <>
-          {!startCall ? (
-            <>
-              <div className='box-close-call'>
-                <FaRegWindowClose className='btn-close-call' onClick={handleCloseCall} />
-              </div>
-              <div className="chat-section">
-                <div className="chat-box">
-                  {messages.map((msg, index) => (
-                    <div key={index} className={`chat-message-wrapper ${msg.from}`}>
-                      <img
-                        src={
-                          msg.from === 'bot'
-                            ? 'https://i.ibb.co/GtY8N6t/vet-avatar.png'
-                            : `data:image/png;base64,${user.pic}`
-                        }
-                        alt={msg.from}
-                        className="chat-avatar"
-                      />
-                      <div className={`chat-message ${msg.from}`}>{msg.text}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="chat-input-row">
-                  <input
-                    type="text"
-                    placeholder="Type your message..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                  />
-                  <button onClick={handleSendMessage}>
-                    <FaPaperPlane />
-                  </button>
-                  <button
-                    className="call-btn"
-                    onClick={() => handleOpenCall()}
-                  >
-                    <FaVideo />
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className='box-close-call'>
-                <FaRegWindowClose className='btn-close-call' onClick={handleCloseCall} />
-              </div>
-              <JitsiWrapper
-                roomName={`vpaas-magic-cookie-d26ed00354e841dbabe6a987da039e25/${channelConsultID}`}
-                displayName={processName}
-                email={user.email}
-                onApiReady={(api) => {
-                  console.log("Jitsi API Ready", api);
+          <div className='box-close-call'>
+            <FaRegWindowClose className='btn-close-call' onClick={handleCloseCall} />
+          </div>
+          {startCall && (
+            <JitsiWrapper
+              roomName={`vpaas-magic-cookie-d26ed00354e841dbabe6a987da039e25/${channelConsultID}`}
+              displayName={processName}
+              email={user.email}
+              onApiReady={(api) => {
+                console.log("Jitsi API Ready", api);
 
-                  // Example: Send welcome chat in Jitsi
-                  api.executeCommand("sendChatMessage", "👋 Hello doctor!");
-
-                  // Listen for incoming Jitsi chat messages
-                  api.addEventListener("incomingMessage", (event) => {
-                    setMessages((prev) => [
-                      ...prev,
-                      { from: "bot", text: event.message },
-                    ]);
-                  });
-                }}
-              />
-            </>
+                // Optional: Send welcome chat to vet
+                api.executeCommand("sendChatMessage", "👋 Hello doctor!");
+              }}
+            />
           )}
         </>
       )}

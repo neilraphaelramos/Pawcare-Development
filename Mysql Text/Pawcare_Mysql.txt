@@ -109,6 +109,7 @@ CREATE TABLE notification (
 CREATE TABLE pet_medical_records (
 	id_medical_record INT AUTO_INCREMENT NOT NULL,
     owner_name VARCHAR(255) NOT NULL,
+    owner_username VARCHAR(80) NOT NULL,
     photo_pet VARCHAR(90) NOT NULL,
     pet_name VARCHAR(100) NOT NULL,
     species ENUM('Dog','Cats') NOT NULL,
@@ -117,7 +118,8 @@ CREATE TABLE pet_medical_records (
     pet_condition TEXT NOT NULL,
     last_visit DATE NOT NULL,
     diagnosis TEXT NOT NULL,
-    PRIMARY KEY (id_medical_record)
+    PRIMARY KEY (id_medical_record),
+    UNIQUE (owner_username )
 );
 
 CREATE TABLE visit_history (
@@ -130,7 +132,17 @@ CREATE TABLE visit_history (
     pet_diagnosis VARCHAR(40) NOT NULL,
     treatment_status VARCHAR(100) NOT NULL,
     date_completed_on DATE NOT NULL,
+    nursing_issues LONGTEXT NULL,
+    care_plan LONGTEXT NULL,
+    local_status_check LONGTEXT NULL,
+    additional_complaint VARCHAR(255) NULL,
+    weight VARCHAR(20) NULL,
+    height VARCHAR(20) NULL,
+    bmi VARCHAR(20) NULL,
+    blood_pressure VARCHAR(20) NULL,
+    pulse VARCHAR(20) NULL,
+    medications LONGTEXT NULL,
+    veterinarian_name VARCHAR(30) NOT NULL,
     PRIMARY KEY (id_pet_history)
 );
-
 
