@@ -150,19 +150,51 @@ const Appointment = () => {
           <span>{isAM ? 'AM' : 'PM'}</span>
           <button onClick={() => setIsAM(false)}>&gt;</button>
         </div>
+
         <div className="time-grid">
-          {(isAM ? am : pm)
-            .filter(slot => !bookedTimes.includes(slot)) // remove booked slots
-            .map((slot, i) => (
+          {(() => {
+            const availableSlots = (isAM ? am : pm).filter((slot) => {
+              const slotStart = new Date(selectedDate);
+              const [startTime] = slot.split(" - "); // e.g. "08:00 AM"
+              const [time, meridian] = startTime.split(" ");
+              const [hourStr, minuteStr] = time.split(":");
+
+              let hours = parseInt(hourStr, 10);
+              const minutes = parseInt(minuteStr, 10);
+
+              // Convert to 24-hour format
+              if (meridian === "PM" && hours !== 12) hours += 12;
+              if (meridian === "AM" && hours === 12) hours = 0;
+
+              slotStart.setHours(hours, minutes, 0, 0);
+
+              const now = new Date();
+              const isToday =
+                selectedDate &&
+                now.toDateString() === selectedDate.toDateString();
+
+              const isPast = isToday && slotStart <= now;
+
+              const isBooked = bookedTimes.includes(slot);
+
+              // Hide if past or booked
+              return !isPast && !isBooked;
+            });
+
+            if (availableSlots.length === 0) {
+              return <div className="no-slots">No available time slots</div>;
+            }
+
+            return availableSlots.map((slot, i) => (
               <button
                 key={i}
-                className={`time-slot ${selectedTime === slot ? 'selected' : ''}`}
+                className={`time-slot ${selectedTime === slot ? "selected" : ""}`}
                 onClick={() => setSelectedTime(slot)}
               >
                 {slot}
               </button>
-            ))
-          }
+            ));
+          })()}
         </div>
       </div>
     </div>

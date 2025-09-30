@@ -75,12 +75,38 @@ const Appointment = () => {
       const dateStr = selectedDate.toISOString().split('T')[0];
       axios.get(`http://localhost:5000/appointmentsvets/${dateStr}`)
         .then(res => {
-          console.log('Appointments fetched:', res.data); // check this output
+          console.log('Appointments fetched:', res.data);
           setAppointments(res.data);
         })
         .catch(err => console.error(err));
     }
   }, [selectedDate]);
+
+  const filterSlots = (slots) => {
+    return slots.filter((slot) => {
+      const slotStart = new Date(selectedDate);
+      const [startTime] = slot.split(" - ");
+      const [time, meridian] = startTime.split(" ");
+      const [hourStr, minuteStr] = time.split(":");
+
+      let hours = parseInt(hourStr, 10);
+      const minutes = parseInt(minuteStr, 10);
+
+      if (meridian === "PM" && hours !== 12) hours += 12;
+      if (meridian === "AM" && hours === 12) hours = 0;
+
+      slotStart.setHours(hours, minutes, 0, 0);
+
+      const now = new Date();
+      const isToday =
+        selectedDate &&
+        now.toDateString() === selectedDate.toDateString();
+
+      const isPast = isToday && slotStart <= now;
+
+      return !isPast; // hide past slots
+    });
+  };
 
   return (
     <div className="appointment-container">
@@ -127,20 +153,29 @@ const Appointment = () => {
             </div>
 
             <div className="time-grid">
-              {(isAM ? am : pm).map((slot, i) => {
-                const appointment = appointments.find(a => a.set_time === slot);
-                const isSelected = slot === selectedSlot;
-                return (
-                  <div
-                    key={i}
-                    className={`time-slot ${isSelected ? 'selected-slot' : ''} ${appointment ? 'booked' : ''}`}
-                    onClick={() => setSelectedSlot(slot)}
-                  >
-                    {slot} {appointment ? `(${appointment.owner_name})` : ''}
-                  </div>
-                );
-              })}
+              {(() => {
+                const filtered = filterSlots(isAM ? am : pm);
+
+                if (filtered.length === 0) {
+                  return <div className="no-slots">No available time slots</div>;
+                }
+
+                return filtered.map((slot, i) => {
+                  const appointment = appointments.find(a => a.set_time === slot);
+                  const isSelected = slot === selectedSlot;
+                  return (
+                    <div
+                      key={i}
+                      className={`time-slot ${isSelected ? 'selected-slot' : ''} ${appointment ? 'booked' : ''}`}
+                      onClick={() => setSelectedSlot(slot)}
+                    >
+                      {slot} {appointment ? `(${appointment.owner_name})` : ''}
+                    </div>
+                  );
+                });
+              })()}
             </div>
+
             <div className="reservation-list">
               <h5>Reservation Details</h5>
               {selectedAppointment ? (
