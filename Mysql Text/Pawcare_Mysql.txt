@@ -118,13 +118,15 @@ CREATE TABLE pet_medical_records (
     pet_condition TEXT NOT NULL,
     last_visit DATE NOT NULL,
     diagnosis TEXT NOT NULL,
-    PRIMARY KEY (id_medical_record),
-    UNIQUE (owner_username )
+    PRIMARY KEY (id_medical_record)
 );
 
 CREATE TABLE visit_history (
 	id_pet_history INT AUTO_INCREMENT NOT NULL,
     id_pet_medical_records INT NOT NULL,
+    owner_address VARCHAR(100) NULL,
+    owner_email VARCHAR(100) NULL,
+    owner_phone VARCHAR(100) NULL,
     day VARCHAR(20) NOT NULL,
     date_visit DATE NOT NULL,
     service_type VARCHAR(90) NOT NULL,
