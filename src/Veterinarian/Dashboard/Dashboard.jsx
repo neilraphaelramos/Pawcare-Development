@@ -278,7 +278,7 @@ export default function Dashboard() {
     {}
     <main className="admin-dashboard-main">
       <header className="admin-dashboard-header">
-        <h2>Admin Dashboard</h2>
+        <h2>Vet Dashboard</h2>
         <input
           type="text"
           placeholder="Search pet, owner, or reason..."
