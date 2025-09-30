@@ -52,6 +52,9 @@ export default function PetRecords() {
     setModalSearchTerm('');
     setAddingRecord(false);
     setNewRecord({
+      ownerEmail: '',
+      ownerAddress: '',
+      ownerPhoneNum: '',
       day: '',
       date: '',
       service: '',
@@ -211,6 +214,9 @@ export default function PetRecords() {
 
         setAddingRecord(false);
         setNewRecord({
+          ownerEmail: '',
+          ownerAddress: '',
+          ownerPhoneNum: '',
           day: '',
           date: '',
           service: '',
@@ -361,9 +367,9 @@ export default function PetRecords() {
 
             {addingRecord && (
               <form className="new-record-form" onSubmit={handleNewRecordSubmit}>
-                <input type="text" name="email" placeholder="Email" value={newRecord.ownerEmail} onChange={handleNewRecordChange} required />
-                <input type="text" name="address" placeholder="Address" value={newRecord.ownerAddress} onChange={handleNewRecordChange} required />
-                <input type="text" name="phone_number" placeholder="Phone Number" value={newRecord.ownerAddress} onChange={handleNewRecordChange} required />
+                <input type="text" name="ownerEmail" placeholder="Email" value={newRecord.ownerEmail} onChange={handleNewRecordChange} required />
+                <input type="text" name="ownerAddress" placeholder="Address" value={newRecord.ownerAddress} onChange={handleNewRecordChange} required />
+                <input type="text" name="ownerPhoneNum" placeholder="Phone Number" value={newRecord.ownerPhoneNum} onChange={handleNewRecordChange} required />
                 <input type="text" name="day" placeholder="Day" value={newRecord.day} onChange={handleNewRecordChange} required />
                 <input type="date" name="date" placeholder="Date" value={newRecord.date} onChange={handleNewRecordChange} required />
                 <input type="text" name="service" placeholder="Service Type" value={newRecord.service} onChange={handleNewRecordChange} required />
