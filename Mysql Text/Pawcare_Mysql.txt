@@ -6,7 +6,9 @@ CREATE TABLE user_credentials (
     email VARCHAR(50) NOT NULL UNIQUE,
     userRole ENUM('User', 'Veterinarian', 'Admin') NOT NULL DEFAULT 'User',
     password VARCHAR(225) NOT NULL,
-    created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isverified TINYINT(1) DEFAULT 0 NOT NULL,
+    authType TINYINT(1) DEFAULT 0 NOT NULL
 )
 
 CREATE TABLE user_infos (
@@ -30,6 +32,14 @@ CREATE TABLE user_infos (
     	ON DELETE CASCADE
     	ON UPDATE CASCADE
 )
+
+CREATE TABLE user_verification (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  token VARCHAR(64) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES user_credentials(id) ON DELETE CASCADE
+);
 
 CREATE TABLE services (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -86,6 +96,7 @@ CREATE TABLE orders (
     order_date DATE NOT NULL,
     total FLOAT(10,2) NOT NULL,
     order_status ENUM('Pending','Out Delivery','Shipped','Cancelled') NOT NULL DEFAULT 'Pending',
+    landmark TEXT NULL,
     PRIMARY KEY (id_order)
 );
 

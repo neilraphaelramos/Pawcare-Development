@@ -46,6 +46,7 @@ import PetProducts from "./User/PetProducts/PetProducts";
 import UserSettings from "./User/Settings/Settings";
 import OnlineConsultation from "./User/OnlineConsultation/OnlineConsultation";
 import AiAssistant from "./User/AiAssistant/AiAssistant";
+import OrderStatus from "./User/OrdersStatus/OrderStatus";
 
 
 
@@ -60,6 +61,9 @@ import VetConsultation from "./Veterinarian/OnlineConsultation/OnlineConsultatio
 import VetProfile from "./Veterinarian/Profile/Profile";
 
 
+// Verified Account
+import VerifyPage from "./User/Auth/verified/VerifyPage";
+
 import "./App.css";
 
 export default function App() {
@@ -70,6 +74,8 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Register />} />
+        {/* ✅ Email verification route */}
+        <Route path="/verify" element={<VerifyPage />} />
 
         {/* Admin Panel Routes */}
         <Route
@@ -114,6 +120,7 @@ export default function App() {
           <Route path="appointments" element={<UserAppointments />} />
           <Route path="pet-records" element={<PetRecords />} />
           <Route path="pet-products" element={<PetProducts />} />
+          <Route path="your-orders" element={<OrderStatus />} />
           <Route path="online-consultation" element={<OnlineConsultation />} />
           <Route path="profile" element={<Profile />} />
           <Route path="ai-assistant" element={<AiAssistant />} />

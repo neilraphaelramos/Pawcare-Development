@@ -8,8 +8,11 @@ const app = express();
 const port = 5000;
 const { OAuth2Client } = require('google-auth-library');
 const multer = require('multer');
-const google_Client_ID = '1005622017132-od8o6vgodloqntbve3mba6anjn6v5v71.apps.googleusercontent.com';
+const google_Client_ID = process.env.GClient_ID;
 const CLIENT = new OAuth2Client(google_Client_ID)
+const nodemailer = require('nodemailer')
+const crypto = require('crypto');
+require('dotenv').config();
 
 const path = require('path');
 
@@ -28,8 +31,16 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 const PRIVATE_KEY = fs.readFileSync("./private_key.pk", "utf8");
-const JITSI_APP_ID = 'vpaas-magic-cookie-d26ed00354e841dbabe6a987da039e25';
-const JITSI_APP_API_KEY = 'vpaas-magic-cookie-d26ed00354e841dbabe6a987da039e25/ac1c10';
+const JITSI_APP_ID = process.env.JAPP_ID;
+const JITSI_APP_API_KEY = process.env.JAAPI_KEY;
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // or use custom SMTP host
+  auth: {
+    user: 'ramos.neilraphael@gmail.com',      // your test Gmail
+    pass: process.env.APP_PASS,       // generated from Google Account > App Passwords
+  },
+});
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -48,10 +59,10 @@ function formatDate(date) {
 
 // MySQL connection
 const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '', // leave blank if no password
-  database: 'pawcare',
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD, // leave blank if no password
+  database: process.env.DB_NAME,
 });
 
 db.connect((err) => {
@@ -82,16 +93,11 @@ app.post('/register', async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Insert into user_credentials
     const sql_credentials = `
       INSERT INTO user_credentials 
-      (userName, email, password, userRole)
-      VALUES (?, ?, ?, ?)
-    `;
-
-    const sql_informations = `
-      INSERT INTO user_infos
-      (user_id, firstName, middleName, lastName, suffix, phoneNumber, houseNum, province, municipality, barangay, zipCode)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (userName, email, password, userRole, isverified, authType)
+      VALUES (?, ?, ?, ?, 0, 0)
     `;
 
     const credential_values = [
@@ -107,8 +113,17 @@ app.post('/register', async (req, res) => {
         return res.status(500).json({ error: 'Registration failed' });
       }
 
+      const userId = result.insertId;
+
+      // Insert into user_infos
+      const sql_informations = `
+        INSERT INTO user_infos
+        (user_id, firstName, middleName, lastName, suffix, phoneNumber, houseNum, province, municipality, barangay, zipCode)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
       const info_values = [
-        result.insertId,
+        userId,
         firstName,
         middleName,
         lastName,
@@ -121,13 +136,49 @@ app.post('/register', async (req, res) => {
         zipCode,
       ];
 
-      db.query(sql_informations, info_values, (err2, result2) => {
+      db.query(sql_informations, info_values, (err2) => {
         if (err2) {
           console.error('Registration error:', err2);
           return res.status(500).json({ error: 'Registration failed' });
         }
 
-        res.status(200).json({ message: 'Registration successful' });
+        // Generate unique verification token
+        const token = crypto.randomBytes(32).toString('hex');
+
+        // Store token temporarily (you can create a table for it)
+        const sql_token = `
+          INSERT INTO user_verification (user_id, token)
+          VALUES (?, ?)
+        `;
+        db.query(sql_token, [userId, token], async (err3) => {
+          if (err3) {
+            console.error('Token insert error:', err3);
+            return res.status(500).json({ error: 'Registration failed' });
+          }
+
+          // Send verification email
+          const verifyLink = `http://localhost:3000/verify?token=${token}`;
+
+          const mailOptions = {
+            from: '"noreply" <ramos.neilraphael@gmail.com>',
+            to: email,
+            subject: 'Verify your account',
+            html: `
+              <p>Hi ${firstName},</p>
+              <p>Thanks for registering! Please verify your account by clicking the link below:</p>
+              <a href="${verifyLink}">${verifyLink}</a>
+              <p>If you didn’t create an account, just ignore this email.</p>
+            `,
+          };
+
+          try {
+            await transporter.sendMail(mailOptions);
+            res.status(200).json({ message: 'Registration successful. Please check your email to verify your account.' });
+          } catch (emailErr) {
+            console.error('Email sending error:', emailErr);
+            res.status(500).json({ error: 'Failed to send verification email' });
+          }
+        });
       });
     });
 
@@ -135,6 +186,40 @@ app.post('/register', async (req, res) => {
     console.error('Hashing error:', err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+app.get('/verify', (req, res) => {
+  const { token } = req.query;
+
+  const sql_find = `
+    SELECT user_id, created_at 
+    FROM user_verification 
+    WHERE token = ?
+  `;
+  db.query(sql_find, [token], (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(400).send('Invalid or expired verification link.');
+    }
+
+    const { user_id, created_at } = results[0];
+
+    // Check if token is older than 24 hours
+    const tokenAgeHours = (Date.now() - new Date(created_at)) / (1000 * 60 * 60);
+    if (tokenAgeHours > 24) {
+      // Delete expired token
+      db.query('DELETE FROM user_verification WHERE token = ?', [token]);
+      return res.status(400).send('⏰ Verification link expired. Please request a new one.');
+    }
+
+    // Token is still valid → verify the user
+    db.query('UPDATE user_credentials SET isverified = 1 WHERE id = ?', [user_id], (err2) => {
+      if (err2) return res.status(500).send('Verification failed.');
+
+      // Delete token after successful verification
+      db.query('DELETE FROM user_verification WHERE token = ?', [token]);
+      res.send('✅ Your account has been verified successfully!');
+    });
+  });
 });
 
 app.post("/data", (req, res) => {
@@ -316,7 +401,7 @@ app.post("/login", (req, res) => {
     FROM user_credentials AS uc
     LEFT JOIN user_infos AS ui
       ON uc.id = ui.user_id
-    WHERE uc.email = ?
+    WHERE uc.email = ? AND uc.authType = 0
   `;
 
   db.query(sql, [email], (err, results) => {
@@ -576,18 +661,17 @@ app.post('/auth/google', async (req, res) => {
     });
 
     const fetchsql = `
-    SELECT uc.*, ui.firstName, ui.middleName, ui.lastName, ui.suffix,
-           ui.phoneNumber, ui.houseNum, ui.province, ui.municipality,
-           ui.barangay, ui.zipCode, ui.profile_Pic, ui.bio
-    FROM user_credentials AS uc
-    LEFT JOIN user_infos AS ui
-      ON uc.id = ui.user_id
-    WHERE uc.email = ?
-  `;
+      SELECT uc.*, ui.firstName, ui.middleName, ui.lastName, ui.suffix,
+             ui.phoneNumber, ui.houseNum, ui.province, ui.municipality,
+             ui.barangay, ui.zipCode, ui.profile_Pic, ui.bio
+      FROM user_credentials AS uc
+      LEFT JOIN user_infos AS ui
+        ON uc.id = ui.user_id
+      WHERE uc.email = ? AND uc.authType = 1
+    `;
 
     const sql_informations = `
-      INSERT INTO user_infos
-      (user_id, firstName, lastName)
+      INSERT INTO user_infos (user_id, firstName, lastName)
       VALUES (?, ?, ?)
     `;
 
@@ -607,6 +691,16 @@ app.post('/auth/google', async (req, res) => {
       }
 
       if (results.length > 0) {
+        // ✅ If user already exists, make sure they are marked as verified
+        db.query(
+          'UPDATE user_credentials SET isverified = 1 WHERE email = ?',
+          [email],
+          (updateErr) => {
+            if (updateErr) console.error('Error updating verification status:', updateErr);
+          }
+        );
+
+        // ✅ Fetch full user info for login
         db.query(fetchsql, [email], (err, results) => {
           if (err) {
             console.error('Login error:', err);
@@ -638,13 +732,9 @@ app.post('/auth/google', async (req, res) => {
             bio: user.bio,
           };
 
+          // (Jitsi token logic unchanged)
           let jitsiToken = null;
           if (user.userRole === "Veterinarian") {
-            console.log("[JITSI] Generating token for vet:", user.email);
-            console.log("[JITSI] ENV APP_ID:", JITSI_APP_ID);
-            console.log("[JITSI] ENV API_KEY:", JITSI_APP_API_KEY);
-            console.log("[JITSI] PRIVATE_KEY exists?", !!PRIVATE_KEY);
-
             try {
               const payload = {
                 aud: "jitsi",
@@ -664,33 +754,31 @@ app.post('/auth/google', async (req, res) => {
                     transcription: "true",
                   },
                 },
-                exp: Math.floor(Date.now() / 1000) + 3 * 60 * 60, // 3 hours
+                exp: Math.floor(Date.now() / 1000) + 3 * 60 * 60,
                 nbf: Math.floor(Date.now() / 1000) - 10,
               };
-
-              console.log("[JITSI] Payload:", JSON.stringify(payload, null, 2));
 
               jitsiToken = jwt.sign(payload, PRIVATE_KEY, {
                 algorithm: "RS256",
                 header: { kid: JITSI_APP_API_KEY },
               });
-
-              console.log("[JITSI] Token generated successfully");
             } catch (jwtErr) {
               console.error("[JITSI ERROR] Failed to sign token:", jwtErr);
             }
           }
 
           return res.status(200).json({
-            message: 'Login successful',
+            message: 'Google login successful',
             user: userData,
             jitsiToken,
           });
-        })
+        });
+
       } else {
+        // New Google user → insert with verified = 1 ✅
         const sqlInsert = `
-          INSERT INTO user_credentials (userName, email, password)
-          VALUES (?, ?, ?)
+          INSERT INTO user_credentials (userName, email, password, isverified, authType)
+          VALUES (?, ?, ?, 1, 1)
         `;
         const hashedPassword = await bcrypt.hash('GOOGLE_AUTH', 10);
 
@@ -700,7 +788,7 @@ app.post('/auth/google', async (req, res) => {
             return res.status(500).json({ error: 'Registration failed' });
           }
 
-          db.query(sql_informations, [result.insertId, given_name, family_name], (err, results) => {
+          db.query(sql_informations, [result.insertId, given_name, family_name], (err) => {
             if (err) {
               console.error('Registration error:', err);
               return res.status(500).json({ error: 'Registration failed' });
@@ -737,13 +825,9 @@ app.post('/auth/google', async (req, res) => {
                 bio: user.bio,
               };
 
+              // Jitsi token logic unchanged
               let jitsiToken = null;
               if (user.userRole === "Veterinarian") {
-                console.log("[JITSI] Generating token for vet:", user.email);
-                console.log("[JITSI] ENV APP_ID:", JITSI_APP_ID);
-                console.log("[JITSI] ENV API_KEY:", JITSI_APP_API_KEY);
-                console.log("[JITSI] PRIVATE_KEY exists?", !!PRIVATE_KEY);
-
                 try {
                   const payload = {
                     aud: "jitsi",
@@ -763,30 +847,26 @@ app.post('/auth/google', async (req, res) => {
                         transcription: "true",
                       },
                     },
-                    exp: Math.floor(Date.now() / 1000) + 3 * 60 * 60, // 3 hours
+                    exp: Math.floor(Date.now() / 1000) + 3 * 60 * 60,
                     nbf: Math.floor(Date.now() / 1000) - 10,
                   };
-
-                  console.log("[JITSI] Payload:", JSON.stringify(payload, null, 2));
 
                   jitsiToken = jwt.sign(payload, PRIVATE_KEY, {
                     algorithm: "RS256",
                     header: { kid: JITSI_APP_API_KEY },
                   });
-
-                  console.log("[JITSI] Token generated successfully");
                 } catch (jwtErr) {
                   console.error("[JITSI ERROR] Failed to sign token:", jwtErr);
                 }
               }
 
               return res.status(200).json({
-                message: 'Registration successful',
+                message: 'Google registration successful',
                 user: userData,
                 jitsiToken,
               });
-            })
-          })
+            });
+          });
         });
       }
     });
@@ -1486,6 +1566,178 @@ app.put('/update_status/orders/:id', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Order Status updated' });
   });
+});
+
+app.post('/payment_setorder', async (req, res) => {
+  const { amount, methods, name, address, date, items, uid, email, phone } = req.body;
+  const status = 'Pending';
+
+  const sqlorders = `
+    INSERT INTO orders (uid, customer_name, customer_address, order_date, total, order_status)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  const sqllistorders = `
+    INSERT INTO order_items (order_id, product_name, quantity)
+    VALUES (?, ?, ?)
+  `;
+
+  const sqlUpdateStock = `
+    UPDATE inventory 
+    SET stock = stock - ? 
+    WHERE name = ? 
+  `;
+
+  const sqlCheckStock = `
+    SELECT product_ID, name, stock FROM inventory WHERE name = ?
+  `;
+
+  try {
+    db.query(sqlorders, [uid, name, address, date, amount, status], (err, orderResult) => {
+      if (err) {
+        console.error('[DB] Insert Order Error:', err);
+        return res.status(500).json({ success: false, message: 'Failed to create order' });
+      }
+
+      const orderId = orderResult.insertId;
+      let lowStockWarnings = [];
+
+      if (Array.isArray(items) && items.length > 0) {
+        items.forEach((item) => {
+          // 1️⃣ Insert order items
+          db.query(sqllistorders, [orderId, item.name, item.qty], (err2) => {
+            if (err2) console.error('[DB] Insert Order Items Error:', err2);
+          });
+
+          // 2️⃣ Subtract from inventory stock
+          db.query(sqlUpdateStock, [item.qty, item.name], (err3) => {
+            if (err3) {
+              console.error('[DB] Update Inventory Stock Error:', err3);
+            } else {
+              // 3️⃣ Check remaining stock
+              db.query(sqlCheckStock, [item.name], (err4, stockResult) => {
+                if (!err4 && stockResult.length > 0) {
+                  const remaining = stockResult[0].stock;
+                  if (remaining === 1) {
+                    lowStockWarnings.push(`⚠️ ${item.name} is almost out of stock (only 1 left)!`);
+                  } else if (remaining <= 0) {
+                    lowStockWarnings.push(`❌ ${item.name} is now out of stock.`);
+                  }
+                }
+              });
+            }
+          });
+        });
+      }
+
+      // 🟢 If COD, finish immediately
+      if (methods === 'cod') {
+        return res.json({
+          success: true,
+          message: 'Order placed successfully with Cash on Delivery',
+          orderId,
+          redirectUrl: null,
+          warnings: lowStockWarnings // send low stock messages to frontend too
+        });
+      }
+
+      // 💳 PayMongo flow for GCash / Maya
+      (async () => {
+        try {
+          const headers = {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            authorization: 'Basic ' + Buffer.from(`${process.env.SECRET_KEY_PAYMONGO}:`).toString('base64')
+          };
+
+          const amountInCentavos = Math.round(Number(amount) * 100);
+
+          // Create Payment Intent
+          const intentRes = await fetch('https://api.paymongo.com/v1/payment_intents', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              data: {
+                attributes: {
+                  amount: amountInCentavos,
+                  currency: 'PHP',
+                  payment_method_allowed: ['gcash', 'paymaya'],
+                  capture_type: 'automatic',
+                  statement_descriptor: `Order #${orderId}`
+                }
+              }
+            })
+          });
+
+          const intentData = await intentRes.json();
+          if (!intentData.data) {
+            console.error('[PAYMONGO INTENT ERROR]', intentData);
+            return res.status(400).json({ success: false, message: 'Failed to create payment intent' });
+          }
+
+          const intentId = intentData.data.id;
+
+          // Create Payment Method
+          const methodRes = await fetch('https://api.paymongo.com/v1/payment_methods', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              data: {
+                attributes: {
+                  type: methods, // gcash or paymaya
+                  billing: { name, email, phone }
+                }
+              }
+            })
+          });
+
+          const methodData = await methodRes.json();
+          if (!methodData.data) {
+            console.error('[PAYMONGO METHOD ERROR]', methodData);
+            return res.status(400).json({ success: false, message: 'Failed to create payment method' });
+          }
+
+          const methodId = methodData.data.id;
+
+          // Attach method
+          const attachRes = await fetch(`https://api.paymongo.com/v1/payment_intents/${intentId}/attach`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              data: {
+                attributes: {
+                  payment_method: methodId,
+                  return_url: `http://localhost:3000/users/pet-products?payment=success`
+                }
+              }
+            })
+          });
+
+          const attachData = await attachRes.json();
+          if (!attachData.data) {
+            console.error('[PAYMONGO ATTACH ERROR]', attachData);
+            return res.status(400).json({ success: false, message: 'Failed to attach payment method' });
+          }
+
+          const redirectUrl = attachData.data.attributes.next_action.redirect.url;
+          res.json({
+            success: true,
+            message: 'Order created, proceed to payment',
+            orderId,
+            redirectUrl,
+            warnings: lowStockWarnings
+          });
+
+        } catch (payErr) {
+          console.error('[PAYMONGO ERROR]', payErr);
+          res.status(500).json({ success: false, message: 'Payment setup failed' });
+        }
+      })();
+    });
+  } catch (err) {
+    console.error('[SERVER ERROR]', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
 });
 
 app.listen(port, () => {
