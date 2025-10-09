@@ -223,7 +223,7 @@ export default function Register() {
               <input type="password" name="confirmPassword" placeholder="Confirm Password" value={form.confirmPassword} onChange={handleChange} required />
             </div>
 
-            <button type="submit">Sign Up</button>
+            <button type="submit" disabled={!agree}>Sign Up</button>
 
             <div className="terms-container">
               <label className="terms-label">
