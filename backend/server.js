@@ -1605,8 +1605,8 @@ app.post('/payment_setorder', async (req, res) => {
   const status = 'Pending';
 
   const sqlorders = `
-    INSERT INTO orders (uid, customer_name, customer_address, order_date, total, order_status)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (uid, customer_name, customer_address, order_date, total, order_status, methodPayments)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
 
   const sqllistorders = `
@@ -1625,7 +1625,7 @@ app.post('/payment_setorder', async (req, res) => {
   `;
 
   try {
-    db.query(sqlorders, [uid, name, address, date, amount, status], (err, orderResult) => {
+    db.query(sqlorders, [uid, name, address, date, amount, status, methods], (err, orderResult) => {
       if (err) {
         console.error('[DB] Insert Order Error:', err);
         return res.status(500).json({ success: false, message: 'Failed to create order' });

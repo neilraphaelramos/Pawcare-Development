@@ -350,8 +350,8 @@ export default function LandingPage() {
     <div className="footer-section social">
       <h4>Follow Us</h4>
       <div className="social-icons">
-        <a href="#"><img src="/images/facebook.png" alt="Facebook" /></a>
-        <a href="#"><img src="/images/instagram.png" alt="Instagram" /></a>
+        <a href="https://www.facebook.com/riveravetclinic"><img src="/images/facebook.png" alt="Facebook" /></a>
+        <a href="https://www.instagram.com/riveravetclinic"><img src="/images/instagram.png" alt="Instagram" /></a>
         <a href="#"><img src="/images/twitter.png" alt="Twitter" /></a>
       </div>
     </div>

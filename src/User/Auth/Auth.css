@@ -343,3 +343,65 @@ button[type="submit"]:hover {
   outline: none;
 
 }
+
+/* MODALS BASE */
+.terms-modal,
+.privacy-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.terms-modal-content,
+.privacy-modal-content {
+  background: #fff;
+  max-width: 700px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 2rem;
+  border-radius: 1rem;
+  position: relative;
+  box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+}
+
+.terms-close,
+.privacy-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 1.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.terms-body,
+.privacy-body {
+  margin-top: 1rem;
+  white-space: pre-line;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: inherit;
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.link-button:hover {
+  text-decoration: none;
+}
