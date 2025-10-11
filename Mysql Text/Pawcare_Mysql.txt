@@ -123,12 +123,12 @@ CREATE TABLE pet_medical_records (
     owner_username VARCHAR(80) NOT NULL,
     photo_pet VARCHAR(90) NOT NULL,
     pet_name VARCHAR(100) NOT NULL,
-    species ENUM('Dog','Cats') NOT NULL,
+    species ENUM('Dog','Cat') NOT NULL,
     pet_age INT NOT NULL,
     pet_gender ENUM('Male','Female') NOT NULL,
-    pet_condition TEXT NOT NULL,
-    last_visit DATE NOT NULL,
-    diagnosis TEXT NOT NULL,
+    pet_condition TEXT NULL,
+    last_visit DATE NULL,
+    diagnosis TEXT NULL,
     PRIMARY KEY (id_medical_record)
 );
 

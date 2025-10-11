@@ -121,6 +121,7 @@ export default function App() {
           <Route path="pet-records" element={<PetRecords />} />
           <Route path="pet-products" element={<PetProducts />} />
           <Route path="your-orders" element={<OrderStatus />} />
+          <Route path="notification" element={<UserNotifications />} />
           <Route path="online-consultation" element={<OnlineConsultation />} />
           <Route path="profile" element={<Profile />} />
           <Route path="ai-assistant" element={<AiAssistant />} />

@@ -89,7 +89,6 @@ io.on('connection', (socket) => {
   });
 });
 
-
 // MySQL connection
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -1771,6 +1770,29 @@ app.post('/payment_setorder', async (req, res) => {
     console.error('[SERVER ERROR]', err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
+});
+
+app.get('/fetch_notification', (req, res) => {
+
+});
+
+app.post('/add_pet_info', upload.single('photo'), (req, res) => {
+  const { name, age, species, gender, ownerUsername, ownerName } = req.body
+  const photo = req.file ? req.file.filename : null;
+
+  const sql = `
+    INSERT INTO pet_medical_records
+    (owner_name, owner_username, photo_pet, pet_name, species, pet_age, pet_gender)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(sql, [ownerName, ownerUsername, photo, name, species, age, gender], (err, result) => {
+    if (err) {
+      console.error("Error adding pet info:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+    res.json({ success: true, id: result.insertId });
+  });
 });
 
 app.listen(port, () => {

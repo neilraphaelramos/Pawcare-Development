@@ -8,24 +8,70 @@ export default function PetRecords() {
   const { user } = useContext(UserContext);
   const [pets, setPets] = useState([]);
   const [selectedPet, setSelectedPet] = useState(null);
+  const [addPetInfo, setAddPetInfo] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalSearchTerm, setModalSearchTerm] = useState('');
   const [selectedVisit, setSelectedVisit] = useState(null);
 
   const APIENDPOINT = 'http://localhost:5000';
 
+  const fetchPets = async () => {
+    try {
+      const res = await axios.get(`${APIENDPOINT}/fetch_user/pet_medical_records/${user.username}`);
+      const data = res.data.map(pet => ({
+        ...pet,
+        diagnosis: pet.diagnosis || '',
+        condition: pet.condition || '',
+        lastVisit: pet.lastVisit || '',
+      }));
+      setPets(data);
+    } catch (err) {
+      console.error('Error fetching pet records:', err);
+    }
+  };
+
+  const handleAddPetInfo = async (e) => {
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData();
+
+    formData.append('photo', form.photo.files[0]);
+    formData.append('name', form.name.value);
+    formData.append('species', form.species.value);
+    formData.append('age', form.age.value);
+    formData.append('gender', form.gender.value);
+    formData.append('ownerUsername', user.username);
+
+    const ownerName = [
+      user.firstName,
+      user.middleName,
+      user.lastName,
+      user.suffix,
+    ].filter(Boolean).join(' ');
+
+    formData.append('ownerName', ownerName);
+
+    try {
+      const res = await axios.post(`${APIENDPOINT}/add_pet_info`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (res.status.success) {
+        alert('✅ Pet added successfully!');
+        setAddPetInfo(false);
+        form.reset();
+
+        fetchPets();
+      }
+
+    } catch (err) {
+      alert('❌ Failed to add pet. Please try again.');
+    }
+  }
+
   useEffect(() => {
     if (!user?.username) return;
-
-    const fetchPets = async () => {
-      try {
-        const res = await axios.get(`${APIENDPOINT}/fetch_user/pet_medical_records/${user.username}`);
-        setPets(res.data);
-      } catch (err) {
-        console.error('Error fetching pet records:', err);
-      }
-    };
-
     fetchPets();
   }, [user]);
 
@@ -77,12 +123,14 @@ export default function PetRecords() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          <button className="add-btn" onClick={() => setAddPetInfo(true)}>
+            <FaPlus /> Add Pet Info
+          </button>
         </div>
       </div>
 
       <div className="pet-records-table">
         <div className="pet-records-header">
-          <div>Owner Name</div>
           <div>Photo</div>
           <div>Name</div>
           <div>Species</div>
@@ -97,7 +145,6 @@ export default function PetRecords() {
         {filteredPets.length > 0 ? (
           filteredPets.map((pet) => (
             <div className="pet-records-row" key={pet.id}>
-              <div>{pet.ownerName}</div>
               <div>
                 <img src={`${APIENDPOINT}/uploads/${pet.photo}`} alt={pet.name} className="pet-thumb" />
               </div>
@@ -126,6 +173,62 @@ export default function PetRecords() {
         )}
       </div>
 
+      {addPetInfo && (
+        <div className="add-pet-overlay">
+          <div className="add-pet-modal">
+            <button
+              className="close-btn"
+              onClick={() => setAddPetInfo(false)}
+            >
+              &times;
+            </button>
+
+            <h2 className="modal-title">Add Pet Info</h2>
+
+            <form className="pet-form" onSubmit={handleAddPetInfo}>
+              <div className="form-group">
+                <label>Pet Photo</label>
+                <input type="file" accept="image/*" name="photo" required />
+              </div>
+
+              <div className="form-group">
+                <label>Pet Name</label>
+                <input type="text" placeholder="e.g. Bella" name='name' required />
+              </div>
+
+              <div className="form-group">
+                <label>Species</label>
+                <select name='species' required>
+                  <option value="">Select species</option>
+                  <option value="Dog">Dog</option>
+                  <option value="Cat">Cat</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Age</label>
+                <input type="number" placeholder="e.g. 3" name='age' required />
+              </div>
+
+              <div className="form-group">
+                <label>Gender</label>
+                <div className="gender-options">
+                  <label>
+                    <input type="radio" name="gender" value="male" /> Male
+                  </label>
+                  <label>
+                    <input type="radio" name="gender" value="female" /> Female
+                  </label>
+                </div>
+              </div>
+
+              <button type="submit" className="submit-btn">
+                Save Pet
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Visit History Modal */}
       {selectedPet && (
