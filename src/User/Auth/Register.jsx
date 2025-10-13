@@ -4,6 +4,7 @@ import axios from "axios";
 import "./Auth.css";
 import { GoogleLogin } from "@react-oauth/google";
 import { UserContext } from "../../hook/authContext";
+import zipCode from "../../data/zipcode.json"
 
 export default function Register() {
   const navigate = useNavigate();
@@ -78,14 +79,24 @@ export default function Register() {
         municipality: "",
         municipalityCode: "",
         barangay: "",
+        zipCode: "" // reset ZIP when province changes
       }));
     } else if (name === "municipality") {
       const selected = municipalities.find((m) => m.name === value);
+
+      // find matching ZIP code based on province + municipality
+      const zipEntry = zipCode.find(
+        (z) =>
+          z.location.toLowerCase() === form.province.toLowerCase() &&
+          z.municipality.toLowerCase() === value.toLowerCase()
+      );
+
       setForm((prev) => ({
         ...prev,
         municipality: value,
         municipalityCode: selected?.code || "",
         barangay: "",
+        zipCode: zipEntry ? zipEntry.post_code.toString() : "" 
       }));
     } else {
       setForm((prev) => ({
@@ -94,6 +105,7 @@ export default function Register() {
       }));
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -261,71 +273,71 @@ export default function Register() {
             <h2><strong>Terms and Conditions</strong></h2>
             <div className="terms-body">
               <p>
-                By creating an account and using the <strong>PawCare System</strong>, 
-                you acknowledge and agree to comply with the following terms and conditions. 
+                By creating an account and using the <strong>PawCare System</strong>,
+                you acknowledge and agree to comply with the following terms and conditions.
                 Please read them carefully before proceeding.
               </p>
               <br />
               <p>
                 <strong>1. Account Responsibility</strong><br />
                 <br />
-                When registering for a PawCare account, you agree to provide accurate, 
-                complete, and current information. You are solely responsible for 
-                safeguarding your login credentials and for all activities conducted 
-                under your account. Any unauthorized use or breach of security must be 
-                reported immediately to the system administrator. PawCare shall not be held 
-                liable for any loss or damage resulting from your failure to protect your 
+                When registering for a PawCare account, you agree to provide accurate,
+                complete, and current information. You are solely responsible for
+                safeguarding your login credentials and for all activities conducted
+                under your account. Any unauthorized use or breach of security must be
+                reported immediately to the system administrator. PawCare shall not be held
+                liable for any loss or damage resulting from your failure to protect your
                 account information.
               </p>
               <br />
               <p>
                 <strong>2. Authorized Use</strong><br />
                 <br />
-                The PawCare System is exclusively intended for registered clients, 
-                licensed veterinarians, and authorized administrators of <strong>Rivera Veterinary Clinic</strong>. 
-                Any unauthorized access, data tampering, reverse engineering, or 
-                modification of system features is strictly prohibited and 
+                The PawCare System is exclusively intended for registered clients,
+                licensed veterinarians, and authorized administrators of <strong>Rivera Veterinary Clinic</strong>.
+                Any unauthorized access, data tampering, reverse engineering, or
+                modification of system features is strictly prohibited and
                 may result in account suspension and possible legal action.
               </p>
               <br />
               <p>
                 <strong>3. System Content and Intellectual Property</strong><br />
                 <br />
-                All content within the PawCare System—including but not limited to pet health records, 
-                consultation notes, user information, and inventory data—remains the exclusive 
-                property of <strong>Rivera Veterinary Clinic</strong>. Unauthorized copying, distribution, or 
+                All content within the PawCare System—including but not limited to pet health records,
+                consultation notes, user information, and inventory data—remains the exclusive
+                property of <strong>Rivera Veterinary Clinic</strong>. Unauthorized copying, distribution, or
                 misuse of this information is prohibited. The system’s design, layout, code,
-                 and functionalities are protected under applicable copyright and 
-                 intellectual property laws.
+                and functionalities are protected under applicable copyright and
+                intellectual property laws.
               </p>
               <br />
               <p>
                 <strong>4. Privacy and Data Protection</strong><br />
                 <br />
-                PawCare adheres to the principles of the <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong>. 
-                All personal and medical information collected within the system is securely stored and 
-                used solely for veterinary and administrative purposes. Your data will not be shared with third parties without your 
-                consent, except when required by law or authorized by the clinic for legitimate operational purposes. 
+                PawCare adheres to the principles of the <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong>.
+                All personal and medical information collected within the system is securely stored and
+                used solely for veterinary and administrative purposes. Your data will not be shared with third parties without your
+                consent, except when required by law or authorized by the clinic for legitimate operational purposes.
                 For more information, please review our Privacy Policy.
               </p>
               <br />
               <p>
                 <strong>5. Modifications to the Terms</strong><br />
                 <br />
-                The developers and administrators of PawCare reserve the right to update or 
-                modify these Terms and Conditions at any time to reflect improvements or 
-                legal requirements. Users will be notified of significant changes through 
-                the system or registered email. Continued use of the PawCare System after 
+                The developers and administrators of PawCare reserve the right to update or
+                modify these Terms and Conditions at any time to reflect improvements or
+                legal requirements. Users will be notified of significant changes through
+                the system or registered email. Continued use of the PawCare System after
                 such modifications constitutes acceptance of the updated terms.
               </p>
               <br />
               <p>
                 <strong>6. Limitation of Liability</strong><br />
                 <br />
-                While every effort is made to ensure the accuracy and reliability of PawCare, 
-                <strong>Rivera Veterinary Clinic</strong> and the system developers shall not be held liable 
-                for any direct or indirect damages, data loss, or service interruptions resulting 
-                from factors beyond their control, including but not limited to technical failures, 
+                While every effort is made to ensure the accuracy and reliability of PawCare,
+                <strong>Rivera Veterinary Clinic</strong> and the system developers shall not be held liable
+                for any direct or indirect damages, data loss, or service interruptions resulting
+                from factors beyond their control, including but not limited to technical failures,
                 internet connectivity issues, or unauthorized system access.
               </p>
               <br />
