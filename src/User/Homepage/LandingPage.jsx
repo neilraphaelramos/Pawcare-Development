@@ -352,7 +352,7 @@ export default function LandingPage() {
       <div className="social-icons">
         <a href="https://www.facebook.com/riveravetclinic"><img src="/images/facebook.png" alt="Facebook" /></a>
         <a href="https://www.instagram.com/riveravetclinic"><img src="/images/instagram.png" alt="Instagram" /></a>
-        <a href="#"><img src="/images/twitter.png" alt="Twitter" /></a>
+        <a href="https://www.tiktok.com/@riveravetclinic"><img src="/images/tik-tok.png" alt="Tik-Tok" /></a>
       </div>
     </div>
   </div>
