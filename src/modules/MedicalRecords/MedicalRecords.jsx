@@ -316,9 +316,9 @@ export default function PetRecords() {
               <div>{pet.condition}</div>
               <div>{pet.lastVisit}</div>
               <div className="diagnosis-text">
-                {pet.diagnosis.length > 30
+                {pet.diagnosis?.length > 30
                   ? pet.diagnosis.slice(0, 30) + '…'
-                  : pet.diagnosis}
+                  : pet.diagnosis || ""}
               </div>
               <div className="action-buttons">
                 <button
