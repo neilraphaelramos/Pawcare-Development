@@ -18,6 +18,7 @@ import ProtectedRoute from "./hook/ProtectedRoute";
 import AdminSidebar from "./modules/AdminSidebar/AdminSidebar";
 import UserSidebar from "./User/Sidebar/UserSidebar";
 import VetSidebar from "./Veterinarian/Sidebar/VetSidebar";
+import Announcements from "./modules/Announcements/Announcements";
 
 
 // Admin panel components
@@ -94,6 +95,7 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="services" element={<Services />} />
           <Route path="features" element={<Features />} />
+          <Route path="announcements" element={<Announcements />} />
           <Route path="medical-records" element={<MedicalRecords />} />
           <Route path="appointments" element={<AdminAppointments />} />
           <Route path="inventory" element={<Inventory />} />

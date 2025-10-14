@@ -25,6 +25,7 @@ const AdminSidebar = () => {
         <Link to="inventory">Manage Inventory</Link>
         <Link to="services">Manage Services</Link>
         <Link to="features">Manage Features</Link> 
+        <Link to="announcements">Announcements</Link>
         <Link to="accounts">Manage Accounts</Link>
       </nav>
       <button className="admin-dashboard-sign-out" onClick={handleLogout}>Sign Out</button>

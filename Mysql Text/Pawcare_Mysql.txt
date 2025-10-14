@@ -85,6 +85,8 @@ CREATE TABLE appointments_tables (
     set_time VARCHAR(200) not null,
     set_date DATE not null,
     owner_name VARCHAR(100) not null,
+    status ENUM('Approved', 'Pending', 'Declined") NOT NULL DEFAULT('Pending'),
+    created_at DATE NOT NULL DEFAULT (CURRENT_DATE),
     PRIMARY KEY(id_appoint)
 );
 
@@ -157,5 +159,15 @@ CREATE TABLE visit_history (
     medications LONGTEXT NULL,
     veterinarian_name VARCHAR(30) NOT NULL,
     PRIMARY KEY (id_pet_history)
+);
+
+CREATE TABLE announcements (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  date_posted DATE NOT NULL,
+  expiration_date DATE NOT NULL,
+  button_text VARCHAR(50),
+  button_link VARCHAR(255)
 );
 

@@ -40,6 +40,9 @@ const Appointment = () => {
   const { user } = useContext(UserContext);
   const [bookedTimes, setBookedTimes] = useState([]);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userAppointments, setUserAppointments] = useState([]);
+
   const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   const startDay = startOfMonth.getDay();
@@ -59,6 +62,14 @@ const Appointment = () => {
     }
   };
 
+  const handleOpenModal = async () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
   useEffect(() => {
     if (selectedDate) {
       const dateStr = selectedDate.toISOString().split('T')[0];
@@ -68,13 +79,23 @@ const Appointment = () => {
     }
   }, [selectedDate]);
 
+  useEffect(() => {
+    const uid = user.id;
+
+    axios.get(`/appointments/user/${uid}`)
+      .then(res => setUserAppointments(res.data))
+      .catch(err => console.error(err));
+  }, [user])
+
   const handleReserve = async () => {
     if (!selectedDate || !selectedTime) return alert("Please select date and time");
 
     const owner_name = `${user?.firstName || ''} ${user?.middleName || ''} ${user?.lastName || ''} ${user?.suffix || ''}`.trim();
 
+    const dateStr = selectedDate.toLocaleDateString('en-CA');
+
     const data = {
-      set_date: selectedDate.toISOString().split('T')[0], // YYYY-MM-DD
+      set_date: dateStr, // YYYY-MM-DD
       set_time: selectedTime,
       owner_name: owner_name,
       user_id: user.id,
@@ -105,6 +126,10 @@ const Appointment = () => {
           <div>{selectedDate ? selectedDate.toDateString() : '-'}</div>
           <div><strong>TIME</strong></div>
           <div>{selectedTime || 'Please select a time slot'}</div>
+          <br />
+          <button className="appoint-view-btn" onClick={handleOpenModal}>
+            📅 View My Appointments
+          </button>
         </div>
         <div className="actions">
           <button onClick={() => window.location.reload()}>Cancel</button>
@@ -197,6 +222,92 @@ const Appointment = () => {
           })()}
         </div>
       </div>
+      {isModalOpen && (
+        <div className="appoint-modal-overlay" onClick={handleCloseModal}>
+          <div className="appoint-modal-content">
+            <h3>My Appointments</h3>
+            {userAppointments.length > 0 ? (
+              <div className="appoint-appointment-list">
+                {userAppointments.map((appt, idx) => {
+                  const dateObj = new Date(appt.set_date);
+                  const formattedDate = dateObj.toLocaleDateString('en-CA');
+
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  dateObj.setHours(0, 0, 0, 0);
+                  const diffTime = today - dateObj;
+                  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                  let relativeText = '';
+                  if (diffDays === 0) {
+                    relativeText = 'Today';
+                  } else if (diffDays === 1) {
+                    relativeText = 'Yesterday';
+                  } else if (diffDays > 1) {
+                    relativeText = `${diffDays} days ago`;
+                  }
+
+                  let bookedText = '';
+                  if (appt.created_at) {
+                    const createdDate = new Date(appt.created_at);
+                    const createdDiffDays = Math.floor(
+                      (today - new Date(createdDate.setHours(0, 0, 0, 0))) /
+                      (1000 * 60 * 60 * 24)
+                    );
+
+                    if (createdDiffDays === 0) {
+                      bookedText = 'Booked Today';
+                    } else if (createdDiffDays === 1) {
+                      bookedText = 'Booked Yesterday';
+                    } else if (createdDiffDays > 1) {
+                      bookedText = `Booked ${createdDiffDays} days ago`;
+                    }
+                  }
+
+                  return (
+                    <div key={idx} className="appoint-appointment-card">
+                      <div className="appoint-appointment-row">
+                        <span className="appoint-label">Date:</span>
+                        <span className="appoint-value">
+                          {formattedDate}{' '}
+                          {relativeText && (
+                            <small className="appoint-relative-text">({relativeText})</small>
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="appoint-appointment-row">
+                        <span className="appoint-label">Time:</span>
+                        <span className="appoint-value">{appt.set_time}</span>
+                      </div>
+
+                      <div className="appoint-appointment-row">
+                        <span className="appoint-label">Status:</span>
+                        <span className={`appoint-status ${appt.status.toLowerCase()}`}>
+                          {appt.status}
+                        </span>
+                      </div>
+
+                      {bookedText && (
+                        <div className="appoint-appointment-row">
+                          <span className="appoint-label">📅</span>
+                          <span className="appoint-value appoint-booked-text">{bookedText}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p>No appointments found.</p>
+            )}
+
+            <button className="appoint-close-modal" onClick={handleCloseModal}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

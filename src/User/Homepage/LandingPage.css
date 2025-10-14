@@ -8,9 +8,9 @@
 
 html {
   font-size: 16px;
-  overflow-x: hidden; 
+  overflow-x: hidden;
   scroll-behavior: smooth;
-  scroll-padding-top: 80px; 
+  scroll-padding-top: 80px;
 }
 
 @media (max-width: 480px) {
@@ -24,13 +24,13 @@ body {
   background-color: #fff;
   color: #333;
   line-height: 1.6;
-  overflow-x: hidden; 
+  overflow-x: hidden;
 }
 
 .navbar {
   background: #ffffff;
   border-bottom: 1px solid #eaeaea;
-  padding: 0.5rem 0; 
+  padding: 0.5rem 0;
   position: sticky;
   z-index: 100;
   transition: all 0.3s ease;
@@ -39,7 +39,7 @@ body {
 .modern-container {
   display: flex;
   align-items: center;
-  padding: 4px 20px; 
+  padding: 4px 20px;
   justify-content: space-between;
   background-color: rgba(38, 160, 160, 0.5);
   backdrop-filter: blur(10px);
@@ -52,14 +52,14 @@ body {
 
 .logo {
   display: flex;
-  align-items: center; 
+  align-items: center;
   gap: 0.5rem;
   margin: 20px;
   color: #000;
 }
 
 .logo-img {
-  height: 40px; 
+  height: 40px;
   width: auto;
   color: #000;
 }
@@ -86,7 +86,7 @@ body {
 }
 
 .nav-links a {
-  margin-left: 3rem; 
+  margin-left: 3rem;
   font-weight: 500;
   color: #222;
   transition: color 0.2s;
@@ -126,7 +126,7 @@ body {
 
   .swiper-button-prev,
   .swiper-button-next {
-    display: none; 
+    display: none;
   }
 }
 
@@ -142,7 +142,7 @@ body {
 
 .service-cards-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); 
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
@@ -151,7 +151,7 @@ body {
 
 @media (max-width: 1024px) {
   .service-cards-container {
-    grid-template-columns: repeat(2, 1fr); 
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -196,7 +196,8 @@ body {
 /* About Section */
 .about-section {
   position: relative;
-  width: 100vw; /* full viewport width */
+  width: 100vw;
+  /* full viewport width */
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -223,7 +224,7 @@ body {
 }
 
 .about-content .text p {
-  margin-bottom: 1rem; 
+  margin-bottom: 1rem;
   font-size: 1.1rem;
   line-height: 1.6;
 }
@@ -245,11 +246,11 @@ body {
 
 .about-content .image iframe {
   width: 100%;
-  max-width: 400px; 
-  height: 250px;  
+  max-width: 400px;
+  height: 250px;
   border: none;
   border-radius: 10px;
-  margin: 0 auto;  
+  margin: 0 auto;
   display: block;
 }
 
@@ -547,9 +548,12 @@ body {
   padding: 20px;
   text-align: center;
   transition: transform 0.3s ease;
-  width: 260px;           /* Fixed width */
-  height: 250px;          /* Fixed height */
-  flex-shrink: 0;         /* Prevent shrinking in flex/grid layouts */
+  width: 260px;
+  /* Fixed width */
+  height: 250px;
+  /* Fixed height */
+  flex-shrink: 0;
+  /* Prevent shrinking in flex/grid layouts */
 }
 
 .feature-card:hover {
@@ -560,7 +564,7 @@ body {
 
 .feature-icon {
   background: #a1ecec;
-  color:#26a0a0;
+  color: #26a0a0;
   width: 64px;
   height: 64px;
   border-radius: 50%;
@@ -632,8 +636,10 @@ body {
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 equal columns */
-  gap: 2rem; /* spacing between cards */
+  grid-template-columns: repeat(2, 1fr);
+  /* 2 equal columns */
+  gap: 2rem;
+  /* spacing between cards */
   justify-content: center;
 }
 
@@ -663,13 +669,16 @@ body {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding-right: 0; /* make sure no right padding */
+    padding-right: 0;
+    /* make sure no right padding */
   }
 }
 
 .rvc-hero-text {
-  flex: 1 1 60%;      /* allow it to grow and take up about 60% width */
-  max-width: 700px;   /* optional max width */
+  flex: 1 1 60%;
+  /* allow it to grow and take up about 60% width */
+  max-width: 700px;
+  /* optional max width */
 }
 
 
@@ -704,8 +713,8 @@ body {
 
 .rvc-hero-image {
   position: relative;
-  width: 800px;           
-  height: 400px;        
+  width: 800px;
+  height: 400px;
   flex-shrink: 0;
   overflow: visible;
   margin-right: 0;
@@ -716,28 +725,28 @@ body {
 .rvc-paw-bg {
   position: absolute;
   top: 50%;
-  right: 0;               
+  right: 0;
   transform: translateY(-50%);
   width: 65rem;
   height: auto;
   opacity: 1.5;
   z-index: 0;
   pointer-events: none;
-  margin: 0;              
-  padding: 0;             
+  margin: 0;
+  padding: 0;
 }
 
 .rvc-animal-img {
   position: absolute;
   top: 50%;
-  right: 0;               
+  right: 0;
   transform: translateY(-50%);
-  width: 1000px;          
+  width: 1000px;
   height: auto;
   object-fit: contain;
   z-index: 1;
-  margin: 0;              
-  padding: 0;             
+  margin: 0;
+  padding: 0;
   display: block;
 }
 
@@ -785,7 +794,7 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: flex;
   gap: 2rem;
-  z-index: 2; 
+  z-index: 2;
 }
 
 
@@ -797,7 +806,7 @@ body {
   font-size: 3rem;
   font-weight: bold;
   margin-bottom: 1rem;
-  text-align: left; 
+  text-align: left;
 }
 
 
@@ -929,31 +938,26 @@ body {
   position: relative;
   display: flex;
   padding-top: 10rem;
-  padding-bottom: 12rem;       /* responsive wrapping on smaller screens */
+  padding-bottom: 12rem;
 }
 
-/* Text Section */
-  .home-text-section {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-start;
-    padding-left: 7rem;
-    max-width: 520px;
-  }
+.home-text-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding-left: 7rem;
+  max-width: 520px;
+}
 
-
-
-/* Image Section */
 .home-image-section {
   position: absolute;
   top: 180px;
-  right: 0;          /* or something like 20px */
-  z-index: 1;        /* ensure it's not behind everything */
+  right: 0;
+  z-index: 1;
   max-width: 1px;
 }
-
 
 .home-image-section img {
   max-width: 900px;

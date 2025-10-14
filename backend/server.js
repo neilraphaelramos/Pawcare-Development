@@ -1305,6 +1305,15 @@ app.get('/appointments/:date', (req, res) => {
   });
 });
 
+app.get('/appointments/user/:uid', (req, res) => {
+  const { uid } = req.params;
+  const sql = 'SELECT * FROM appointments_tables WHERE UID = ? ORDER BY set_date ASC, set_time ASC';
+  db.query(sql, [uid], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
 app.get('/appointmentsvets/:date', (req, res) => {
   const { date } = req.params; // expects YYYY-MM-DD
   const sql = 'SELECT * FROM appointments_tables WHERE set_date = ?';
@@ -1774,6 +1783,77 @@ app.post('/payment_setorder', async (req, res) => {
 
 app.get('/fetch_notification', (req, res) => {
 
+});
+
+app.get("/fetchAnnouncements", (req, res) => {
+  const sql = `
+    SELECT 
+      id,
+      title,
+      content,
+      button_text,
+      button_link,
+      DATE_FORMAT(date_posted, '%Y-%m-%d') AS date_posted,
+      DATE_FORMAT(expiration_date, '%Y-%m-%d') AS expiration_date
+    FROM announcements
+    ORDER BY date_posted DESC
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("Error fetching announcements:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json({ success: true, data: result });
+  });
+});
+
+app.post("/addAnnouncement", (req, res) => {
+  const { title, content, date_posted, expiration_date, button_text, button_link } = req.body;
+  const sql = `
+    INSERT INTO announcements (title, content, date_posted, expiration_date, button_text, button_link)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(sql, [title, content, date_posted, expiration_date, button_text, button_link], (err, result) => {
+    if (err) {
+      console.error("Error adding announcement:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({ success: true, id: result.insertId });
+  });
+});
+
+app.put("/updateAnnouncement/:id", (req, res) => {
+  const { id } = req.params;
+  const { title, content, date_posted, expiration_date, button_text, button_link } = req.body;
+  const sql = `
+    UPDATE announcements
+    SET title=?, content=?, date_posted=?, expiration_date=?, button_text=?, button_link=?
+    WHERE id=?
+  `;
+
+  db.query(sql, [title, content, date_posted, expiration_date, button_text, button_link, id], (err, result) => {
+    if (err) {
+      console.error("Error updating announcement:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({ success: true });
+  });
+});
+
+app.delete("/deleteAnnouncement/:id", (req, res) => {
+  const { id } = req.params;
+  const sql = "DELETE FROM announcements WHERE id=?";
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("Error deleting announcement:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+
+    res.json({ success: true });
+  });
 });
 
 app.post('/add_pet_info', upload.single('photo'), (req, res) => {
