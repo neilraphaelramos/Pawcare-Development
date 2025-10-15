@@ -72,7 +72,7 @@ const Appointment = () => {
 
   useEffect(() => {
     if (selectedDate) {
-      const dateStr = selectedDate.toISOString().split('T')[0];
+      const dateStr = selectedDate.toLocaleDateString('en-CA');
       axios.get(`http://localhost:5000/appointmentsvets/${dateStr}`)
         .then(res => {
           console.log('Appointments fetched:', res.data);
