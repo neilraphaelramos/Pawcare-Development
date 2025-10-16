@@ -23,7 +23,7 @@ const Services = () => {
 
   const fetchDataServices = async () => {
     try {
-      const response = await axios.post("http://localhost:5000/fetch_services");
+      const response = await axios.post("/fetch_services");
 
       if (!Array.isArray(response.data)) {
         console.error("Invalid response format from server.");
@@ -67,7 +67,7 @@ const Services = () => {
     try {
       if (editingIndex !== null && newService.id) {
         // Update service
-        const response = await axios.put(`http://localhost:5000/update_services/${newService.id}`, newService);
+        const response = await axios.put(`/update_services/${newService.id}`, newService);
         if (response.data.success) {
           fetchDataServices();
           closeModal();
@@ -76,7 +76,7 @@ const Services = () => {
         }
       } else {
         // Add new service
-        const response = await axios.post("http://localhost:5000/add_services", newService);
+        const response = await axios.post("/add_services", newService);
         if (response.data.success) {
           fetchDataServices();
           closeModal();
@@ -95,7 +95,7 @@ const Services = () => {
     if (!window.confirm("Are you sure you want to delete this service?")) return;
 
     try {
-      const response = await axios.delete(`http://localhost:5000/delete_services/${service.id}`);
+      const response = await axios.delete(`/delete_services/${service.id}`);
       if (response.data.success) {
         alert(response.data.message);
         fetchDataServices();

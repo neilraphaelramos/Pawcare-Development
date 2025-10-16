@@ -73,7 +73,7 @@ const Appointment = () => {
   useEffect(() => {
     if (selectedDate) {
       const dateStr = selectedDate.toISOString().split('T')[0];
-      axios.get(`http://localhost:5000/appointments/${dateStr}`)
+      axios.get(`/appointments/${dateStr}`)
         .then(res => setBookedTimes(res.data))
         .catch(err => console.error(err));
     }

@@ -9,7 +9,7 @@ function AnnouncementBanner({ onHeightChange }) {
   useEffect(() => {
     const fetchAnnouncement = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/fetchAnnouncements");
+        const res = await axios.get("server-api/fetchAnnouncements");
         if (res.data.success && res.data.data.length > 0) {
           setAnnouncement(res.data.data[0]);
         }

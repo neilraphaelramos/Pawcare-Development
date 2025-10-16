@@ -63,7 +63,7 @@ const Appointment = () => {
   };
 
   const updateStatus = (id, status) => {
-    axios.put(`http://localhost:5000/appointments/${id}/status`, { status })
+    axios.put(`/appointments/${id}/status`, { status })
       .then(() => {
         setAppointments(prev => prev.map(a => a.id_appoint === id ? { ...a, status } : a));
       })
@@ -73,7 +73,7 @@ const Appointment = () => {
   useEffect(() => {
     if (selectedDate) {
       const dateStr = selectedDate.toLocaleDateString('en-CA');
-      axios.get(`http://localhost:5000/appointmentsvets/${dateStr}`)
+      axios.get(`/appointmentsvets/${dateStr}`)
         .then(res => {
           console.log('Appointments fetched:', res.data);
           setAppointments(res.data);

@@ -10,7 +10,7 @@ export default function VerifyPage() {
 
   useEffect(() => {
     if (token) {
-      fetch(`http://localhost:5000/verify?token=${token}`)
+      fetch(`server-api/verify?token=${token}`)
         .then(async (res) => {
           const text = await res.text();
           if (res.ok) {

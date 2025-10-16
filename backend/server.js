@@ -17,6 +17,7 @@ const crypto = require('crypto');
 require('dotenv').config();
 const rooms = {};
 const path = require('path');
+const { connect } = require('http2');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -44,7 +45,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-app.use(cors());
+app.use(cors({
+  origin: '*'
+}));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use('/uploads', express.static('/tmp/uploads'));
@@ -177,7 +181,6 @@ app.post('/register', async (req, res) => {
         // Generate unique verification token
         const token = crypto.randomBytes(32).toString('hex');
 
-        // Store token temporarily (you can create a table for it)
         const sql_token = `
           INSERT INTO user_verification (user_id, token)
           VALUES (?, ?)
@@ -189,19 +192,35 @@ app.post('/register', async (req, res) => {
           }
 
           // Send verification email
-          const verifyLink = `http://localhost:3000/verify?token=${token}`;
+          const verifyLink = `https://unconglutinated-anya-unhacked.ngrok-free.dev/verify?token=${token}`;
 
           const mailOptions = {
-            from: '"noreply" <ramos.neilraphael@gmail.com>',
+            from: '"Neil Raphael Ramos" <ramos.neilraphael@gmail.com>',
             to: email,
             subject: 'Verify your account',
             html: `
               <p>Hi ${firstName},</p>
-              <p>Thanks for registering! Please verify your account by clicking the link below:</p>
-              <a href="${verifyLink}">${verifyLink}</a>
+              <p>Thanks for registering! Please verify your account by clicking the button below:</p>
+               <a 
+                href="${verifyLink}" 
+                target="_blank" 
+                style="
+                  display: inline-block;
+                  background-color: #4CAF50;
+                  color: white;
+                  padding: 12px 24px;
+                  text-decoration: none;
+                  border-radius: 6px;
+                  font-weight: bold;
+                  font-family: Arial, sans-serif;
+                "
+              >
+                Verify Email
+              </a>
               <p>If you didn’t create an account, just ignore this email.</p>
             `,
           };
+
 
           try {
             await transporter.sendMail(mailOptions);
@@ -218,6 +237,33 @@ app.post('/register', async (req, res) => {
     console.error('Hashing error:', err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+app.post("/check-username", (req, res) => {
+  const { username } = req.body;
+
+  const sql = "SELECT id FROM user_credentials WHERE username = ?";
+  db.query(sql, [username], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Server error" });
+    }
+    res.json({ exists: results.length > 0 });
+  });
+});
+
+// Check if email exists
+app.post("/check-email", (req, res) => {
+  const { email } = req.body;
+
+  const sql = "SELECT id FROM user_credentials WHERE email = ?";
+  db.query(sql, [email], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Server error" });
+    }
+    res.json({ exists: results.length > 0 });
+  });
 });
 
 app.get('/verify', (req, res) => {
@@ -1319,6 +1365,7 @@ app.get('/appointmentsvets/:date', (req, res) => {
   const sql = 'SELECT * FROM appointments_tables WHERE set_date = ?';
   db.query(sql, [date], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
+    console.log(date)
     res.json(results); // array of appointments
   });
 });
@@ -1748,7 +1795,7 @@ app.post('/payment_setorder', async (req, res) => {
               data: {
                 attributes: {
                   payment_method: methodId,
-                  return_url: `http://localhost:3000/users/pet-products?payment=success`
+                  return_url: `https://unconglutinated-anya-unhacked.ngrok-free.dev/users/pet-products?payment=success`
                 }
               }
             })
@@ -1875,8 +1922,10 @@ app.post('/add_pet_info', upload.single('photo'), (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+let ngrokUrl;
+
+app.listen(port, async () => {
+  console.log(`🚀 Server running on port ${port}`);
 });
 
 server.listen(5001, () => {

@@ -101,7 +101,7 @@ function exportToPDF(data) {
   doc.save("inventory_report.pdf");
 }
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "";
 
 
 export default function InventoryTable() {

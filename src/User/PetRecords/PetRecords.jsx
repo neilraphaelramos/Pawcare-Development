@@ -13,7 +13,7 @@ export default function PetRecords() {
   const [modalSearchTerm, setModalSearchTerm] = useState('');
   const [selectedVisit, setSelectedVisit] = useState(null);
 
-  const APIENDPOINT = 'http://localhost:5000';
+  const APIENDPOINT = '/server-api';
 
   const fetchPets = async () => {
     try {
@@ -53,22 +53,25 @@ export default function PetRecords() {
     formData.append('ownerName', ownerName);
 
     try {
-      const res = await axios.post(`${APIENDPOINT}/add_pet_info`, formData, {
+      const res = await axios.post(`/server-api/add_pet_info`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      if (res.status.success) {
+      
+      if (res.data.success) {
         alert('✅ Pet added successfully!');
         setAddPetInfo(false);
         form.reset();
-
         fetchPets();
+      } else {
+        alert('❌ Failed to add pet.');
       }
 
     } catch (err) {
+      console.error(err);
       alert('❌ Failed to add pet. Please try again.');
     }
-  }
+  };
+
 
   useEffect(() => {
     if (!user?.username) return;

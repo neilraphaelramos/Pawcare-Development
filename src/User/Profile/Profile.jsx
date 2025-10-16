@@ -54,7 +54,7 @@ export default function Profile() {
     try {
       if (!window.confirm("You want to update your personal details?")) return;
 
-      const response = await fetch("http://localhost:5000/update_profile", {
+      const response = await fetch("server-api/update_profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

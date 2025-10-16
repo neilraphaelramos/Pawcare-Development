@@ -58,7 +58,7 @@ const UserInventory = () => {
     };
 
     try {
-      const res = await axios.post('/payment_setorder', payload);
+      const res = await axios.post('/server-api/payment_setorder', payload);
 
       if (res.data.success) {
         if (paymentMethod.toLowerCase() === 'cod') {
@@ -90,12 +90,12 @@ const UserInventory = () => {
     quantity: row.stock,
     unit: row.unit,
     price: parseFloat(row.price),
-    image: row.photo ? `/uploads/${row.photo}` : '/images/default-product.png',
+    image: row.photo ? `/server-api/uploads/${row.photo}` : '/images/default-product.png',
   });
 
   const fetchInventory = async () => {
     try {
-      const res = await axios.get('/fetch_inventory');
+      const res = await axios.get('/server-api/fetch_inventory');
       if (res.data?.success && Array.isArray(res.data.data)) {
         const mapped = res.data.data.map(mapRowToUIItem);
         setItems(mapped);

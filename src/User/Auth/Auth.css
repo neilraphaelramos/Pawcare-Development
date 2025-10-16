@@ -405,3 +405,53 @@ button[type="submit"]:hover {
 .link-button:hover {
   text-decoration: none;
 }
+
+.login-modal-overlay, .register-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.login-modal, .register-modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+.login-modal-close, .register-modal-close {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: #26a0a0;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.login-modal-close:hover, .register-modal-close:hover {
+  background: #1b7b7b;
+}
+
+.register-password-match {
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+.register-password-match.match {
+  color: green;
+}
+
+.register-password-match.no-match {
+  color: red;
+}
+

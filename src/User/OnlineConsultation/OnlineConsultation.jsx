@@ -71,7 +71,7 @@ const OnlineConsultation = () => {
       formData.append("consult_type", fillUp.consult_type);
       formData.append("file_payment", fillUp.file_payment);
 
-      const res = await axios.post("http://localhost:5000/online_consult", formData, {
+      const res = await axios.post("server-api/online_consult", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -136,7 +136,7 @@ const OnlineConsultation = () => {
 
     console.log('[Socket] Initializing connection...');
 
-    socketRef.current = io('http://localhost:5001', {
+    socketRef.current = io('chat-socket.io', {
       transports: ['websocket', 'polling'],
     });
 

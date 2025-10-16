@@ -8,10 +8,10 @@ import { GoogleLogin } from "@react-oauth/google";
 
 export default function Login() {
   const { setUser, setTokenData } = useContext(UserContext);
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [showModal, setShowModal] = useState(false);
+  const [messageModal, setMessageModal] = useState("");
+  const [nextRoute, setNextRoute] = useState(""); // store where to navigate
 
   const navigate = useNavigate();
 
@@ -20,55 +20,60 @@ export default function Login() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const openModal = (message, route = "") => {
+    setMessageModal(message);
+    setShowModal(true);
+    setNextRoute(route);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    if (nextRoute) {
+      navigate(nextRoute);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      const res = await axios.post("http://localhost:5000/login", form);
+      const res = await axios.post("server-api/login", form);
 
       if (res.data.message === "Login successful") {
         const role = res.data.user.role;
-
         setUser(res.data.user);
-
         setTokenData(res.data.jitsiToken);
 
-        alert(`Login successful! Role: ${role}`);
-        console.log(res.data)
+        // Determine the route based on role
+        let route = "";
+        if (role === "Admin") route = "/admin";
+        else if (role === "Veterinarian") route = "/veterinarian";
+        else route = "/users";
 
-        if (role === "Admin") {
-          navigate("/admin");
-        } else if (role === "Veterinarian") {
-          navigate("/veterinarian");
-        } else {
-          navigate("/users");
-        }
+        openModal(`Login successful!`, route);
       } else {
-        alert("Login failed.");
+        openModal("Login failed.");
       }
     } catch (error) {
-      alert(error.response?.data?.error || "Login failed.");
+      openModal(error.response?.data?.error || "Login failed.");
     }
   };
 
   const handleGoogleAuth = async (credentialResponse) => {
     try {
-      const res = await axios.post("http://localhost:5000/auth/google", {
+      const res = await axios.post("server-api/auth/google", {
         token: credentialResponse.credential,
       });
 
-      console.log(res.data);
-      alert(res.data.message);
       setUser(res.data.user);
-      navigate("/users");
+      openModal(res.data.message, "/users");
     } catch (err) {
       console.error(err);
-      alert("Something went wrong.");
+      openModal("Something went wrong.");
     }
   };
 
   const handleGoogleError = () => {
-    alert("Google Login Failed");
+    openModal("Google Login Failed");
   };
 
   return (
@@ -84,8 +89,6 @@ export default function Login() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-
-
           <h1>Login</h1>
           <p className="subtext">Enter your credentials to access your account</p>
 
@@ -130,7 +133,17 @@ export default function Login() {
           </p>
         </motion.div>
       </div>
-    </div >
-  );
 
+      {showModal && (
+        <div className="login-modal-overlay">
+          <div className="login-modal">
+            <p>{messageModal}</p>
+            <button className="login-modal-close" onClick={closeModal}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

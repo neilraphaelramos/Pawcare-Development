@@ -13,6 +13,8 @@ export default function Register() {
 
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [messageModal, setMessageModal] = useState('');
+  const [showModal, setShowModal] = useState(false)
 
   const [form, setForm] = useState({
     firstName: "",
@@ -36,6 +38,10 @@ export default function Register() {
   const [provinces, setProvinces] = useState([]);
   const [municipalities, setMunicipalities] = useState([]);
   const [barangays, setBarangays] = useState([]);
+
+  const isPasswordMatch = form.confirmPassword
+    ? form.password === form.confirmPassword
+    : null;
 
   useEffect(() => {
     axios
@@ -67,6 +73,15 @@ export default function Register() {
     }
   }, [form.municipalityCode]);
 
+  const openModal = (message) => {
+    setMessageModal(message);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -96,7 +111,7 @@ export default function Register() {
         municipality: value,
         municipalityCode: selected?.code || "",
         barangay: "",
-        zipCode: zipEntry ? zipEntry.post_code.toString() : "" 
+        zipCode: zipEntry ? zipEntry.post_code.toString() : ""
       }));
     } else {
       setForm((prev) => ({
@@ -106,35 +121,51 @@ export default function Register() {
     }
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const password = form.password;
-
     if (!agree) {
-      alert("You must agree to the Terms & Conditions and Privacy Policy.");
+      openModal(
+        "You must agree to the Terms & Conditions and Privacy Policy."
+      );
       return;
     }
 
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-
-    if (!strongPasswordRegex.test(password)) {
-      alert("Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.");
+    const strongPasswordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    if (!strongPasswordRegex.test(form.password)) {
+      openModal(
+        "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character."
+      );
       return;
     }
 
-    if (password !== form.confirmPassword) {
-      alert("Passwords do not match.");
+    if (form.password !== form.confirmPassword) {
+      openModal("Passwords do not match.");
       return;
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/register", form);
+      const usernameRes = await axios.post("server-api/check-username", {
+        username: form.username,
+      });
+      if (usernameRes.data.exists) {
+        openModal("Username already exists. Please choose another one.");
+        return;
+      }
+
+      const emailRes = await axios.post("server-api/check-email", { email: form.email });
+      if (emailRes.data.exists) {
+        openModal("Email is already registered. Please use another email.");
+        return;
+      }
+
+      const res = await axios.post("server-api/register", form);
 
       if (res.data.message) {
-        alert("Registration successful!");
+        openModal("✅ Registration successful!");
 
+        // Clear form
         setForm({
           firstName: "",
           middleName: "",
@@ -154,36 +185,39 @@ export default function Register() {
           confirmPassword: "",
         });
 
-        navigate("/login", {
-          state: { successMessage: "✅ You’ve successfully registered!" },
-        });
+        // Navigate to login after closing modal
+        setTimeout(() => {
+          navigate("/login");
+        }, 1500);
       } else if (res.data.error) {
-        alert(res.data.error);
+        openModal(res.data.error);
       }
     } catch (err) {
       console.error(err);
-      alert("Something went wrong.");
+      openModal("Something went wrong.");
     }
   };
 
   const handleGoogleAuth = async (credentialResponse) => {
     try {
-      const res = await axios.post("http://localhost:5000/auth/google", {
+      const res = await axios.post("server-api/auth/google", {
         token: credentialResponse.credential,
       });
 
-      console.log(res.data);
-      alert(res.data.message);
       setUser(res.data.user);
-      navigate("/users");
+      openModal(res.data.message);
+
+      setTimeout(() => {
+        navigate("/users");
+      }, 1500);
     } catch (err) {
       console.error(err);
-      alert("Something went wrong.");
+      openModal("Something went wrong.");
     }
   };
 
   const handleGoogleError = () => {
-    alert("Google Login Failed");
+    openModal("Google Login Failed");
   };
 
   return (
@@ -236,6 +270,14 @@ export default function Register() {
               <input type="text" name="zipCode" placeholder="Zip Code (Optional)" value={form.zipCode} onChange={handleChange} />
               <input type="password" name="password" placeholder="Password" value={form.password} onChange={handleChange} required />
               <input type="password" name="confirmPassword" placeholder="Confirm Password" value={form.confirmPassword} onChange={handleChange} required />
+              {form.confirmPassword && (
+                <p
+                  className={`register-password-match ${isPasswordMatch ? "match" : "no-match"
+                    }`}
+                >
+                  {isPasswordMatch ? "✅ Passwords match" : "❌ Passwords do not match"}
+                </p>
+              )}
             </div>
 
             <button type="submit" disabled={!agree}>Sign Up</button>
@@ -485,6 +527,17 @@ export default function Register() {
           </div>
         </div>
       )};
+
+      {showModal && (
+        <div className="register-modal-overlay">
+          <div className="register-modal">
+            <p>{messageModal}</p>
+            <button className="register-modal-close" onClick={closeModal}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
