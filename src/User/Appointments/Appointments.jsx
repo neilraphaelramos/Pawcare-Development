@@ -39,6 +39,8 @@ const Appointment = () => {
   const { am, pm } = generateTimeSlots();
   const { user } = useContext(UserContext);
   const [bookedTimes, setBookedTimes] = useState([]);
+  const [messageModal, setMessageModal] = useState('');
+  const [showModal, setShowModal] = useState(false)
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userAppointments, setUserAppointments] = useState([]);
@@ -70,10 +72,14 @@ const Appointment = () => {
     setIsModalOpen(false);
   };
 
+  const handleCloseMessageModal = () => {
+    setShowModal(false);
+  };
+
   useEffect(() => {
     if (selectedDate) {
-      const dateStr = selectedDate.toISOString().split('T')[0];
-      axios.get(`/appointments/${dateStr}`)
+      const dateStr = selectedDate.toLocaleDateString('en-CA');
+      axios.get(`/server-api/appointments/${dateStr}`)
         .then(res => setBookedTimes(res.data))
         .catch(err => console.error(err));
     }
@@ -82,7 +88,7 @@ const Appointment = () => {
   useEffect(() => {
     const uid = user.id;
 
-    axios.get(`/appointments/user/${uid}`)
+    axios.get(`/server-api/appointments/user/${uid}`)
       .then(res => setUserAppointments(res.data))
       .catch(err => console.error(err));
   }, [user])
@@ -103,14 +109,15 @@ const Appointment = () => {
 
     try {
       const res = await axios.post('http://localhost:5000/appointments', data);
-      alert(`Appointment reserved on ${res.data.message}`);
+      setShowModal(true);
+      setMessageModal(`Appointment reserved on ${res.data.message}`)
       setSelectedDate(null);
       setSelectedTime('');
       setIsAM(false);
       setCurrentDate(new Date());
     } catch (err) {
       console.error(err);
-      alert("Error reserving appointment");
+      setMessageModal("Error reserving appointment");
     }
   };
 
@@ -153,8 +160,17 @@ const Appointment = () => {
           {[...Array(startDay === 0 ? 6 : startDay - 1)].map((_, i) => <div key={i}></div>)}
           {daysInMonth.map(day => {
             const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-            const isDisabled = date < new Date().setHours(0, 0, 0, 0);
-            const isSelected = selectedDate?.getDate() === day && selectedDate?.getMonth() === currentDate.getMonth();
+
+            const isPast = date < new Date().setHours(0, 0, 0, 0);
+
+            const isWednesday = date.getDay() === 3;
+
+            const isDisabled = isPast || isWednesday;
+
+            const isSelected =
+              selectedDate?.getDate() === day &&
+              selectedDate?.getMonth() === currentDate.getMonth();
+
             return (
               <div
                 key={day}
@@ -165,6 +181,7 @@ const Appointment = () => {
               </div>
             );
           })}
+
         </div>
       </div>
 
@@ -308,6 +325,28 @@ const Appointment = () => {
           </div>
         </div>
       )}
+
+      {showModal && (
+        <div className="AppointMessage-overlay" onClick={handleCloseMessageModal}>
+          <div
+            className="AppointMessage-modal"
+            onClick={(e) => e.stopPropagation()} // prevent close on inner click
+          >
+            <div className="AppointMessage-header">
+              <h3>Appointment Notice</h3>
+            </div>
+            <div className="AppointMessage-body">
+              <p>{messageModal}</p>
+            </div>
+            <div className="AppointMessage-footer">
+              <button onClick={handleCloseMessageModal} className="AppointMessage-close-btn">
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

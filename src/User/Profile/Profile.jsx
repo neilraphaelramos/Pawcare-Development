@@ -6,6 +6,9 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(true);
   const [showImageModal, setShowImageModal] = useState(false);
   const { user, setUser } = useContext(UserContext);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultMessage, setResultMessage] = useState("");
 
   const [formData, setFormData] = useState({
     firstName: user.firstName || "",
@@ -29,6 +32,7 @@ export default function Profile() {
   const handleChange = (e) => {
     const { name, value, files } = e.target;
 
+
     if (name === "profileImage" && files && files[0]) {
       const file = files[0];
       const reader = new FileReader();
@@ -36,7 +40,7 @@ export default function Profile() {
         setFormData((prev) => ({
           ...prev,
           profileImage: reader.result,
-          imageFile: file, 
+          imageFile: file,
         }));
       };
       reader.readAsDataURL(file);
@@ -48,13 +52,15 @@ export default function Profile() {
     }
   };
 
-  const handleUpdateSumbit = async (e) => {
+  const handleUpdateSubmit = (e) => {
     e.preventDefault();
+    setShowConfirmModal(true);
+  };
 
+  const confirmUpdate = async () => {
+    setShowConfirmModal(false);
     try {
-      if (!window.confirm("You want to update your personal details?")) return;
-
-      const response = await fetch("server-api/update_profile", {
+      const response = await fetch("/server-api/update_profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -73,26 +79,25 @@ export default function Profile() {
           currentPassword: formData.currentPassword,
           newPassword: formData.newPassword,
           password: formData.confirmPassword,
-          image: formData.profileImage
-        })
+          image: formData.profileImage,
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        alert(data.message);
-        setIsEditing(false);
-        setTimeout(() => {
-          setIsEditing(true);
-        }, 5000);
+        setResultMessage(data.message || "Profile updated successfully!");
         setUser(data.user);
+        setIsEditing(false);
+        setTimeout(() => setIsEditing(true), 5000);
       } else {
-        alert(data.error || "Update failed");
+        setResultMessage(data.error || "Update failed.");
       }
     } catch (err) {
       console.error("Update error:", err);
-      alert("Server error.");
+      setResultMessage("Server error. Please try again.");
     }
+    setShowResultModal(true);
   };
 
   const toggleImageModal = () => setShowImageModal((prev) => !prev);
@@ -101,7 +106,7 @@ export default function Profile() {
     <div className="pf-profile">
       <h2 className="pf-profile__title">My Profile</h2>
 
-      <form onSubmit={handleUpdateSumbit} className="pf-profile__form">
+      <form onSubmit={handleUpdateSubmit} className="pf-profile__form">
         <div className="pf-profile__card pf-profile__card--header">
           <div className="pf-profile__avatar-section">
             <div className="pf-profile__avatar-wrapper">
@@ -341,6 +346,54 @@ export default function Profile() {
               className="pf-profile__close-modal-btn"
             >
               Done
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Confirm Modal */}
+      {showConfirmModal && (
+        <div className="profileupdateconfirm-overlay" onClick={() => setShowConfirmModal(false)}>
+          <div
+            className="profileupdateconfirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="profileupdateconfirm-title">Confirm Update</h3>
+            <p className="profileupdateconfirm-message">
+              Are you sure you want to update your profile information?
+            </p>
+            <div className="profileupdateconfirm-actions">
+              <button
+                className="profileupdateconfirm-btn cancel"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="profileupdateconfirm-btn confirm"
+                onClick={confirmUpdate}
+              >
+                Yes, Update
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Result Modal */}
+      {showResultModal && (
+        <div className="profileupdateresult-overlay" onClick={() => setShowResultModal(false)}>
+          <div
+            className="profileupdateresult-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="profileupdateresult-title">Profile Update</h3>
+            <p className="profileupdateresult-message">{resultMessage}</p>
+            <button
+              className="profileupdateresult-btn"
+              onClick={() => setShowResultModal(false)}
+            >
+              OK
             </button>
           </div>
         </div>

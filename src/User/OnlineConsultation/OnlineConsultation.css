@@ -170,3 +170,83 @@
 .btn-close-call {
   cursor: pointer;
 }
+
+/* ================================
+   Modal Styles for Online Consultation
+   ================================ */
+
+.messageconsult-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: messageconsult-fadeIn 0.3s ease;
+}
+
+@keyframes messageconsult-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.messageconsult-modal {
+  background: #ffffff;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: messageconsult-slideIn 0.3s ease;
+}
+
+@keyframes messageconsult-slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.messageconsult-header {
+  background: #3acccc;
+  color: #fff;
+  padding: 1rem;
+  text-align: center;
+}
+
+.messageconsult-body {
+  padding: 1rem;
+  text-align: center;
+  color: #333;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.messageconsult-footer {
+  padding: 0.75rem;
+  text-align: center;
+  background: #f7f7f7;
+}
+
+.messageconsult-close-btn {
+  background: #32b2b2;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.messageconsult-close-btn:hover {
+  background: #258383;
+}

@@ -21,7 +21,6 @@ const UserSidebar = () => {
         <Link to="appointments">Appointment</Link>
         <Link to="pet-records">Pet Records</Link>
         <Link to="pet-products">Pet Products</Link>
-        <Link to="your-orders">Your Orders</Link>
         <Link to="notification">Notification</Link>
         <Link to="online-consultation">Online Consultation</Link>
         <Link to="profile">Profile</Link>

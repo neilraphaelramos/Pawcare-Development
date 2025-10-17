@@ -14,7 +14,9 @@ export default function Register() {
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [messageModal, setMessageModal] = useState('');
-  const [showModal, setShowModal] = useState(false)
+  const [showModal, setShowModal] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isRegister, setIsRegister] = useState(false)
 
   const [form, setForm] = useState({
     firstName: "",
@@ -80,6 +82,11 @@ export default function Register() {
 
   const closeModal = () => {
     setShowModal(false);
+    setIsRegister(false)
+    if (isSuccess) {
+      navigate("/login");
+      setIsSuccess(false)
+    }
   };
 
   const handleChange = (e) => {
@@ -106,6 +113,8 @@ export default function Register() {
           z.municipality.toLowerCase() === value.toLowerCase()
       );
 
+      console.log("Zip entry found:", zipEntry);
+
       setForm((prev) => ({
         ...prev,
         municipality: value,
@@ -123,11 +132,11 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsRegister(true);
 
     if (!agree) {
-      openModal(
-        "You must agree to the Terms & Conditions and Privacy Policy."
-      );
+      openModal("You must agree to the Terms & Conditions and Privacy Policy.");
+      setIsRegister(false);
       return;
     }
 
@@ -137,35 +146,40 @@ export default function Register() {
       openModal(
         "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character."
       );
+      setIsRegister(false);
       return;
     }
 
     if (form.password !== form.confirmPassword) {
       openModal("Passwords do not match.");
+      setIsRegister(false);
       return;
     }
 
     try {
-      const usernameRes = await axios.post("server-api/check-username", {
+      const usernameRes = await axios.post("/server-api/check-username", {
         username: form.username,
       });
       if (usernameRes.data.exists) {
         openModal("Username already exists. Please choose another one.");
+        setIsRegister(false);
         return;
       }
 
-      const emailRes = await axios.post("server-api/check-email", { email: form.email });
+      const emailRes = await axios.post("/server-api/check-email", {
+        email: form.email,
+      });
       if (emailRes.data.exists) {
         openModal("Email is already registered. Please use another email.");
+        setIsRegister(false);
         return;
       }
 
-      const res = await axios.post("server-api/register", form);
+      const res = await axios.post("/server-api/register", form);
 
       if (res.data.message) {
-        openModal("✅ Registration successful!");
+        openModal("✅ " + res.data.message);
 
-        // Clear form
         setForm({
           firstName: "",
           middleName: "",
@@ -185,16 +199,17 @@ export default function Register() {
           confirmPassword: "",
         });
 
-        // Navigate to login after closing modal
-        setTimeout(() => {
-          navigate("/login");
-        }, 1500);
+        setIsSuccess(true);
+        setShowModal(true);
+        setIsRegister(false);
       } else if (res.data.error) {
         openModal(res.data.error);
+        setIsRegister(false);
       }
     } catch (err) {
       console.error(err);
       openModal("Something went wrong.");
+      setIsRegister(false);
     }
   };
 
@@ -280,7 +295,9 @@ export default function Register() {
               )}
             </div>
 
-            <button type="submit" disabled={!agree}>Sign Up</button>
+            <button type="submit" disabled={!agree || isRegister}>
+              {isRegister ? 'Signing Up...' : 'Sign Up'}
+            </button>
 
             <div className="terms-container">
               <label className="terms-label">

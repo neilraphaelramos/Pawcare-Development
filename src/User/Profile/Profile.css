@@ -246,3 +246,120 @@ html, body {
 .pf-profile__close-modal-btn:hover {
   background-color: #4b5563;
 }
+
+/* ================================
+   Confirm Update Modal Styles
+   ================================ */
+.profileupdateconfirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.profileupdateconfirm-modal {
+  background: #fff;
+  max-width: 400px;
+  width: 90%;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  text-align: center;
+}
+
+.profileupdateconfirm-title {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.profileupdateconfirm-message {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.profileupdateconfirm-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profileupdateconfirm-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.profileupdateconfirm-btn.cancel {
+  background: #ccc;
+}
+
+.profileupdateconfirm-btn.confirm {
+  background: #32b2b2;
+  color: #fff;
+}
+
+/* ================================
+   Result Modal Styles
+   ================================ */
+.profileupdateresult-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.profileupdateresult-modal {
+  background: #fff;
+  max-width: 350px;
+  width: 90%;
+  padding: 1.5rem;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+
+.profileupdateresult-title {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.profileupdateresult-message {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.profileupdateresult-btn {
+  background: #32b2b2;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.profileupdateresult-btn:hover {
+  background: #259797;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

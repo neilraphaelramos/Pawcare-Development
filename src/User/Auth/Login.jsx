@@ -11,7 +11,8 @@ export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [showModal, setShowModal] = useState(false);
   const [messageModal, setMessageModal] = useState("");
-  const [nextRoute, setNextRoute] = useState(""); // store where to navigate
+  const [nextRoute, setNextRoute] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false)
 
   const navigate = useNavigate();
 
@@ -28,6 +29,7 @@ export default function Login() {
 
   const closeModal = () => {
     setShowModal(false);
+    setIsLoggingIn(false)
     if (nextRoute) {
       navigate(nextRoute);
     }
@@ -35,6 +37,7 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoggingIn(true)
     try {
       const res = await axios.post("server-api/login", form);
 
@@ -49,12 +52,14 @@ export default function Login() {
         else if (role === "Veterinarian") route = "/veterinarian";
         else route = "/users";
 
-        openModal(`Login successful!`, route);
+        openModal(res.data.message, route);
       } else {
         openModal("Login failed.");
+        setIsLoggingIn(false)
       }
     } catch (error) {
       openModal(error.response?.data?.error || "Login failed.");
+      setIsLoggingIn(false)
     }
   };
 
@@ -113,7 +118,9 @@ export default function Login() {
             <div className="forgot-password">
               <a href="#">Forgot password?</a>
             </div>
-            <button type="submit">Log In</button>
+            <button type="submit" disabled={isLoggingIn}>
+              {isLoggingIn ? 'Logging In...' : 'Log In'}
+            </button>
           </form>
 
           <div className="divider">

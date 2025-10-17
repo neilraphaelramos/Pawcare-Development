@@ -12,6 +12,8 @@ export default function PetRecords() {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalSearchTerm, setModalSearchTerm] = useState('');
   const [selectedVisit, setSelectedVisit] = useState(null);
+  const [messageModal, setMessageModal] = useState('');
+  const [showMessageModal, setShowMessageModal] = useState(false);
 
   const APIENDPOINT = '/server-api';
 
@@ -20,9 +22,9 @@ export default function PetRecords() {
       const res = await axios.get(`${APIENDPOINT}/fetch_user/pet_medical_records/${user.username}`);
       const data = res.data.map(pet => ({
         ...pet,
-        diagnosis: pet.diagnosis || '',
-        condition: pet.condition || '',
-        lastVisit: pet.lastVisit || '',
+        diagnosis: pet.diagnosis || 'No Diagnosis Yet',
+        condition: pet.condition || 'No Condition Yet',
+        lastVisit: pet.lastVisit || 'No Last Visit Yet',
       }));
       setPets(data);
     } catch (err) {
@@ -56,19 +58,22 @@ export default function PetRecords() {
       const res = await axios.post(`/server-api/add_pet_info`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      
+
       if (res.data.success) {
-        alert('✅ Pet added successfully!');
+        setShowMessageModal(true);
+        setMessageModal('Pet added successfully!');
         setAddPetInfo(false);
         form.reset();
         fetchPets();
       } else {
-        alert('❌ Failed to add pet.');
+        setShowMessageModal(false);
+        setMessageModal('Failed to add pet.');
       }
 
     } catch (err) {
       console.error(err);
-      alert('❌ Failed to add pet. Please try again.');
+      setShowMessageModal(false);
+      setMessageModal('Failed to add pet. Please try again.');
     }
   };
 
@@ -423,6 +428,30 @@ export default function PetRecords() {
           </div>
         </div>
       )}
+
+      {showMessageModal && (
+        <div className="recordMessage-modal-overlay">
+          <div className="recordMessage-modal">
+            <div className="recordMessage-modal-header">
+              <h2>Record Message</h2>
+            </div>
+
+            <div className="recordMessage-modal-body">
+              <p>{messageModal}</p>
+            </div>
+
+            <div className="recordMessage-modal-footer">
+              <button
+                className="recordMessage-close-btn"
+                onClick={() => setShowMessageModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -22,15 +22,29 @@ const UserInventory = () => {
   const { user } = useContext(UserContext);
   const location = useLocation();
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [showMessageModal, setShowMessageModal] = useState(false)
+  const [messageModal, setMessageModal] = useState('')
+  const [showOrdersModal, setShowOrdersModal] = useState(false);
+  const [orders, setOrders] = useState([]);
+
+  const userId = user?.id;
+
+  const handleMessageModal = () => {
+    setPaymentSuccess(false);
+    setMessageModal(false);
+    setMessageModal('');
+  }
 
   const handleConfirmOrder = async () => {
     if (cart.length === 0) {
-      alert('🛍️ Your order is empty. Please add at least one item before confirming.');
+      setShowMessageModal(true);
+      setMessageModal('🛍️ Your order is empty. Please add at least one item before confirming.');
       return;
     }
 
     if (!paymentMethod) {
-      alert('Please select a payment method');
+      setShowMessageModal(true);
+      setMessageModal('Please select a payment method');
       return;
     }
 
@@ -62,7 +76,8 @@ const UserInventory = () => {
 
       if (res.data.success) {
         if (paymentMethod.toLowerCase() === 'cod') {
-          alert('✅ Order placed successfully with Cash on Delivery!');
+          setShowMessageModal(true);
+          setMessageModal('✅ Order placed successfully with Cash on Delivery!');
           setCart([]);         // 🧹 clear cart
           setShowModal(false); // close modal
           setPaymentMethod('');
@@ -74,12 +89,13 @@ const UserInventory = () => {
           window.location.href = res.data.redirectUrl;
         }
       } else {
-        alert(res.data.message || 'Failed to place order');
+        setMessageModal(res.data.message || 'Failed to place order')
       }
 
     } catch (err) {
       console.error('Order error:', err);
-      alert('Something went wrong while placing your order.');
+      setShowMessageModal(true);
+      setMessageModal('Something went wrong while placing your order.');
     }
   };
 
@@ -90,12 +106,12 @@ const UserInventory = () => {
     quantity: row.stock,
     unit: row.unit,
     price: parseFloat(row.price),
-    image: row.photo ? `/server-api/uploads/${row.photo}` : '/images/default-product.png',
+    image: row.photo ? `http://localhost:5000/uploads/${row.photo}` : '/images/default-product.png',
   });
 
   const fetchInventory = async () => {
     try {
-      const res = await axios.get('/server-api/fetch_inventory');
+      const res = await axios.get('http://localhost:5000/fetch_inventory');
       if (res.data?.success && Array.isArray(res.data.data)) {
         const mapped = res.data.data.map(mapRowToUIItem);
         setItems(mapped);
@@ -122,6 +138,17 @@ const UserInventory = () => {
     }
   };
 
+  const handleViewOrders = async () => {
+    try {
+      const res = await axios.get(`/server-api/orders/${userId}`);
+      setOrders(res.data.orders || []);
+      setShowOrdersModal(true);
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+    }
+  };
+
+
   useEffect(() => {
     if (user) {
       setDeliveryInfo({
@@ -140,9 +167,8 @@ const UserInventory = () => {
 
     if (paymentStatus === 'success') {
       setPaymentSuccess(true);
-      alert('✅ Payment successful! Your order has been confirmed.');
+      setMessageModal('✅ Payment successful! Your order has been confirmed.');
 
-      // Optionally: clear the cart and remove query params
       setCart([]);
       window.history.replaceState({}, document.title, location.pathname);
     }
@@ -246,6 +272,13 @@ const UserInventory = () => {
             }}
           >
             Checkout
+          </button>
+          {/* 🆕 View Orders Button */}
+          <button
+            className="checkout-btn"
+            onClick={handleViewOrders}
+          >
+            View My Orders
           </button>
         </div>
       </div>
@@ -373,6 +406,108 @@ const UserInventory = () => {
                 </div>
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showOrdersModal && (
+        <div className="vo-modal-overlay">
+          <div className="vo-modal">
+            <h2>My Orders</h2>
+            <div className="vo-modal-orders-list">
+              {orders.length === 0 ? (
+                <p>You have no orders yet.</p>
+              ) : (
+                orders.map(order => (
+                  <div key={order.id_order} className="vo-modal-order-card">
+                    <div className="vo-modal-order-header">
+                      <h4>Order #{order.id_order}</h4>
+                      <span className={`vo-modal-order-status ${order.order_status.toLowerCase()}`}>
+                        {order.order_status}
+                      </span>
+                    </div>
+
+                    <p><strong>Date:</strong> {new Date(order.order_date).toLocaleString()}</p>
+                    <p><strong>Address:</strong> {order.customer_address}</p>
+
+                    <table className="vo-modal-items-table">
+                      <thead>
+                        <tr>
+                          <th>Item</th>
+                          <th>Qty</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {order.items.map((item, idx) => (
+                          <tr key={idx}>
+                            <td>{item.product_name}</td>
+                            <td>{item.quantity}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    <div className="vo-modal-order-footer">
+                      Total: ₱{order.total.toFixed(2)}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="vo-modal-footer">
+              <button onClick={() => setShowOrdersModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {paymentSuccess && (
+        <div className="messpay-modal-overlay">
+          <div className="messpay-modal">
+            <div className="messpay-icon-circle">
+              <svg
+                className="messpay-check-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </div>
+            <h2>Payment Successful!</h2>
+            <p>{messageModal}</p>
+            <button
+              className="messpay-close-btn"
+              onClick={handleMessageModal}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showMessageModal && (
+        <div className="messOrd-modal-overlay">
+          <div className="messOrd-modal">
+            <div className="messOrd-modal-header">
+              <h2>Order Message</h2>
+            </div>
+            <div className="messOrd-modal-body">
+              <p>{messageModal || "Your order message goes here."}</p>
+            </div>
+            <div className="messOrd-modal-footer">
+              <button
+                className="messOrd-close-btn"
+                onClick={handleMessageModal}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

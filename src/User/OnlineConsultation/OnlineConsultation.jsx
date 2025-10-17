@@ -40,6 +40,10 @@ const OnlineConsultation = () => {
   const chatEndRef = useRef(null);
   const socketRef = useRef(null);
 
+  const [showModal, setShowModal] = useState(false);
+  const [messageModal, setMessageModal] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
   const handleInputChange = (e) => {
     setFillUp({ ...fillUp, [e.target.name]: e.target.value });
   };
@@ -54,6 +58,11 @@ const OnlineConsultation = () => {
     }
   };
 
+  const handleMessageModalClose = () => {
+    setShowModal(false)
+    setIsSubmitted(false)
+  }
+
   const handleOpenCall = () => {
     if (!channelConsultID) return; // safety check
     setStartCall(true);
@@ -62,6 +71,7 @@ const OnlineConsultation = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitted(true);
     try {
       const formData = new FormData();
       formData.append("owner_name", fillUp.owner_name);
@@ -71,14 +81,17 @@ const OnlineConsultation = () => {
       formData.append("consult_type", fillUp.consult_type);
       formData.append("file_payment", fillUp.file_payment);
 
-      const res = await axios.post("server-api/online_consult", formData, {
+      const res = await axios.post("/server-api/online_consult", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (!res.data.success) {
+        setShowModal(true);
+        setMessageModal('Your Request Error. Please try again!')
         setFormSubmitted(false);
       } else {
-        alert(res.data.message);
+        setShowModal(true)
+        setMessageModal('Your Request is ' + res.data.message);
         const consultID = res.data.channel_consult_ID;
         setChannelConsultID(consultID);
         setFormSubmitted(true);
@@ -136,7 +149,7 @@ const OnlineConsultation = () => {
 
     console.log('[Socket] Initializing connection...');
 
-    socketRef.current = io('chat-socket.io', {
+    socketRef.current = io('http://localhost:5001', {
       transports: ['websocket', 'polling'],
     });
 
@@ -226,7 +239,9 @@ const OnlineConsultation = () => {
           </div>
 
           <div className="form-group full-width">
-            <button className="user-dashboard-primary-btn" type="submit">Submit Consultation Request</button>
+            <button className="user-dashboard-primary-btn" type="submit" disabled={isSubmitted}>
+              {isSubmitted ? 'Submitting...' : 'Submit Consultation Request'}
+            </button>
           </div>
         </form>
       ) : (
@@ -286,6 +301,29 @@ const OnlineConsultation = () => {
             />
           )}
         </>
+      )}
+      {showModal && (
+        <div className="messageconsult-overlay" onClick={() => setShowModal(false)}>
+          <div
+            className="messageconsult-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="messageconsult-header">
+              <h3>Consultation Notice</h3>
+            </div>
+            <div className="messageconsult-body">
+              <p>{messageModal}</p>
+            </div>
+            <div className="messageconsult-footer">
+              <button
+                onClick={() => setShowModal(false)}
+                className="messageconsult-close-btn"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

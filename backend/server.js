@@ -15,9 +15,7 @@ const CLIENT = new OAuth2Client(google_Client_ID)
 const nodemailer = require('nodemailer')
 const crypto = require('crypto');
 require('dotenv').config();
-const rooms = {};
 const path = require('path');
-const { connect } = require('http2');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -38,10 +36,10 @@ const JITSI_APP_ID = process.env.JAPP_ID;
 const JITSI_APP_API_KEY = process.env.JAAPI_KEY;
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // or use custom SMTP host
+  service: 'gmail',
   auth: {
-    user: 'ramos.neilraphael@gmail.com',      // your test Gmail
-    pass: process.env.APP_PASS,       // generated from Google Account > App Passwords
+    user: process.env.EMAIL,      
+    pass: process.env.APP_PASS,       
   },
 });
 
@@ -195,9 +193,9 @@ app.post('/register', async (req, res) => {
           const verifyLink = `https://unconglutinated-anya-unhacked.ngrok-free.dev/verify?token=${token}`;
 
           const mailOptions = {
-            from: '"Neil Raphael Ramos" <ramos.neilraphael@gmail.com>',
+            from: process.env.EMAIL,
             to: email,
-            subject: 'Verify your account',
+            subject: 'Verify your PawCare Email',
             html: `
               <p>Hi ${firstName},</p>
               <p>Thanks for registering! Please verify your account by clicking the button below:</p>
@@ -1642,6 +1640,61 @@ app.get('/fetch/orders', (req, res) => {
       return res.status(500).json({ success: false, error: "Database error" });
     }
     res.json({ success: true, data: results });
+  });
+});
+
+app.get('/orders/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  const sql = `
+    SELECT 
+      o.id_order, 
+      o.customer_name, 
+      o.customer_address, 
+      o.order_date, 
+      o.total, 
+      o.order_status,
+      i.product_name, 
+      i.quantity
+    FROM orders o
+    LEFT JOIN order_items i 
+      ON o.id_order = i.order_id
+    WHERE o.uid = ?
+    ORDER BY o.order_date DESC
+  `;
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching orders:', err);
+      return res.status(500).json({ error: 'Server error' });
+    }
+
+    // Group rows by id_order
+    const ordersMap = {};
+
+    results.forEach(row => {
+      if (!ordersMap[row.id_order]) {
+        ordersMap[row.id_order] = {
+          id_order: row.id_order,
+          customer_name: row.customer_name,
+          customer_address: row.customer_address,
+          order_date: row.order_date,
+          total: row.total,
+          order_status: row.order_status,
+          items: []
+        };
+      }
+
+      if (row.product_name) {
+        ordersMap[row.id_order].items.push({
+          product_name: row.product_name,
+          quantity: row.quantity
+        });
+      }
+    });
+
+    const groupedOrders = Object.values(ordersMap);
+    res.json({ orders: groupedOrders });
   });
 });
 
