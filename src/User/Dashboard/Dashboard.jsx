@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Appointments from "../Appointments/Appointments";
 import AiAssistant from "../AiAssistant/AiAssistant";
 import { Routes, Route, useNavigate } from "react-router-dom";
@@ -17,9 +17,14 @@ import PetRecords from "../PetRecords/PetRecords";
 import PetProducts from "../PetProducts/PetProducts";
 import OnlineConsultation from "../OnlineConsultation/OnlineConsultation";
 import Profile from "../Profile/Profile";
+import { UserContext } from "../../hook/authContext";
+import axios from "axios";
 
 const Dashboard = () => {
-  const [showChat, setShowChat] = useState(true); 
+  const { user } = useContext(UserContext);
+  const [showChat, setShowChat] = useState(true);
+  const [totalPets, setTotalPets] = useState(0);
+  const [totalAppointment, setTotalAppointment] = useState(0);
   const navigate = useNavigate();
   const handleAddAppointment = () => {
     navigate("/users/appointments");
@@ -110,6 +115,20 @@ const Dashboard = () => {
     },
   ];
 
+  const handleMetricStatus = async (e) => {
+    try {
+      const res = await axios.get(`/server-api/fetch/metric_dashboard/${user.id}/${user.username}`);
+      setTotalPets(res.data.totalPets);
+      setTotalAppointment(res.data.totalAppointments);
+    } catch (err) {
+      console.error('Error fetching Metric:', err);
+    }
+  }
+
+  useEffect(() => {
+    handleMetricStatus();
+  })
+
   return (
     <div className="user-dashboard">
       <main className="user-dashboard-main">
@@ -121,11 +140,11 @@ const Dashboard = () => {
         <section className="user-dashboard-metrics">
           <div className="user-dashboard-metric">
             <div><FaPaw /> Total Pets</div>
-            <span>{0}</span>
+            <span>{totalPets}</span>
           </div>
           <div className="user-dashboard-metric">
             <div><FaCalendarAlt /> Appointments</div>
-            <span>{0}</span>
+            <span>{totalAppointment}</span>
           </div>
           <div className="user-dashboard-metric">
             <div><FaBell /> Notifications</div>
@@ -165,20 +184,29 @@ const Dashboard = () => {
           </div>
 
           <div className="user-dashboard-calendar-dates">
-            {weekDates.map((dateObj, index) => (
-              <div className="user-dashboard-day" key={index}>
-                <div className="user-dashboard-weekday">
-                  {dateObj.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()}
-                </div>
+            {weekDates.map((dateObj, index) => {
+              const isWednesday = dateObj.getDay() === 3; // 0=Sun, 3=Wed
+
+              return (
                 <div
-                  className={`user-dashboard-date ${dateObj.toDateString() === selectedDate.toDateString() ? "user-dashboard-active" : ""
-                    }`}
-                  onClick={() => setSelectedDate(dateObj)}
+                  className={`user-dashboard-day ${isWednesday ? "disabled" : ""}`}
+                  key={index}
                 >
-                  {dateObj.getDate()}
+                  <div className="user-dashboard-weekday">
+                    {dateObj.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()}
+                  </div>
+                  <div
+                    className={`user-dashboard-date ${dateObj.toDateString() === selectedDate.toDateString() ? "user-dashboard-active" : ""
+                      }`}
+                    onClick={() => {
+                      if (!isWednesday) setSelectedDate(dateObj);
+                    }}
+                  >
+                    {dateObj.getDate()}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="user-dashboard-doctor-cards">
@@ -297,7 +325,7 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      {}
+      { }
       {showChat && <AiAssistant onClose={() => setShowChat(false)} />}
     </div>
   );

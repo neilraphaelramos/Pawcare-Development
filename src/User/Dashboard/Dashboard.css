@@ -144,7 +144,7 @@ html, body {
 }
 
 .user-dashboard-metric span {
-  font-size: 1rem;
+  font-size: 2rem;
   font-weight: 600;
   color: #1a202c;
 }
@@ -261,6 +261,22 @@ html, body {
   font-size: 0.75rem;
   color: #32b2b2;
   text-decoration: underline;
+}
+
+.user-dashboard-day.disabled .user-dashboard-date {
+  background: #eee;
+  color: #aaa;
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.user-dashboard-calendar-grid .disabled-day {
+  background: #f3f3f3;
+  color: #999;
+  pointer-events: none;
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* ───────────────────────────  Departments  ─────────────────────────────── */

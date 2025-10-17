@@ -112,6 +112,7 @@ CREATE TABLE order_items (
 
 CREATE TABLE notification (
 	notify_id int AUTO_INCREMENT NOT NULL,
+    UID int not NULL,
     title_notify VARCHAR(200) NOT NULL,
     type_notify ENUM('Appointments','Online Consultations','Stock Alerts') NOT NULL,
     details TEXT NOT NULL,

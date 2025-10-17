@@ -1975,7 +1975,25 @@ app.post('/add_pet_info', upload.single('photo'), (req, res) => {
   });
 });
 
-let ngrokUrl;
+app.get('/fetch/metric_dashboard/:uid/:username', (req, res) => {
+  const { uid, username } = req.params;
+
+  const appointQuery = `SELECT COUNT(*) AS totalAppointments FROM appointments_tables WHERE UID = ?`;
+  const petQuery = `SELECT COUNT(*) AS totalPets FROM pet_medical_records WHERE owner_username = ?`;
+
+  db.query(appointQuery, [uid], (err1, appointRes) => {
+    if (err1) return res.status(500).json({ error: 'Failed to fetch appointments' });
+
+    db.query(petQuery, [username], (err2, petRes) => {
+      if (err2) return res.status(500).json({ error: 'Failed to fetch pet records' });
+
+      res.json({
+        totalAppointments: appointRes[0].totalAppointments,
+        totalPets: petRes[0].totalPets
+      });
+    });
+  });
+});
 
 app.listen(port, async () => {
   console.log(`🚀 Server running on port ${port}`);
