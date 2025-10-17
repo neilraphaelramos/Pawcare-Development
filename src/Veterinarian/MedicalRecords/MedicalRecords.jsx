@@ -27,7 +27,7 @@ export default function PetRecords() {
     completed: ''
   });
 
-  const APIENDPOINT = '';
+  const APIENDPOINT = '/server-api';
 
   const handleView = (pet) => {
     axios.get(`${APIENDPOINT}/fetch/visit_history/${pet.id}`)
