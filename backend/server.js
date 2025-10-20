@@ -953,7 +953,7 @@ app.post('/auth/google', async (req, res) => {
 });
 
 app.post('/online_consult', upload.single('file_payment'), (req, res) => {
-  const { owner_name, pet_name, pet_type, concern_description, consult_type } = req.body;
+  const { owner_name, pet_name, pet_type, pet_species, concern_description, consult_type } = req.body;
   const channel_consult_ID = "consult" + Date.now();
 
   const filePath = `/uploads/${req.file.filename}`;
@@ -962,9 +962,9 @@ app.post('/online_consult', upload.single('file_payment'), (req, res) => {
   try {
     const sqlScript = `
       INSERT INTO online_consultation_table
-        (channel_consult_ID, Owner_name, pet_name, pet_type, 
+        (channel_consult_ID, Owner_name, pet_name, pet_type, pet_species,
          payment_proof, concern_text, type_consult, fileType)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(sqlScript, [
@@ -972,6 +972,7 @@ app.post('/online_consult', upload.single('file_payment'), (req, res) => {
       owner_name,
       pet_name,
       pet_type,
+      pet_species,
       filePath,
       concern_description,
       consult_type,
@@ -992,6 +993,27 @@ app.post('/online_consult', upload.single('file_payment'), (req, res) => {
     console.error('Server error:', err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+app.get('/fetch_pet/:username', (req, res) => {
+  const { username } = req.params;
+  const sql = 'SELECT pet_name, petType, species FROM pet_medical_records WHERE owner_username = ?';
+
+  db.query(sql, [username], (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      return res.status(500).json({ error: "Database error" });
+    };
+
+    if (results.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    return res.json({
+      success: true,
+      data: results
+    });
+  })
 });
 
 app.get('/online_consult_fetch', (req, res) => {
@@ -1393,6 +1415,7 @@ app.get('/fetch/pet_medical_records', (req, res) => {
       userName: r.owner_username,
       photo: r.photo_pet,
       name: r.pet_name,
+      petType: r.petType,
       species: r.species,
       age: r.pet_age,
       gender: r.pet_gender,
@@ -1421,6 +1444,7 @@ app.get('/fetch_user/pet_medical_records/:username', (req, res) => {
       userName: r.owner_username,
       photo: r.photo_pet,
       name: r.pet_name,
+      petType: r.petType,
       species: r.species,
       age: r.pet_age,
       gender: r.pet_gender,
@@ -1957,16 +1981,16 @@ app.delete("/deleteAnnouncement/:id", (req, res) => {
 });
 
 app.post('/add_pet_info', upload.single('photo'), (req, res) => {
-  const { name, age, species, gender, ownerUsername, ownerName } = req.body
+  const { name, age, type, species, gender, ownerUsername, ownerName } = req.body
   const photo = req.file ? req.file.filename : null;
 
   const sql = `
     INSERT INTO pet_medical_records
-    (owner_name, owner_username, photo_pet, pet_name, species, pet_age, pet_gender)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    (owner_name, owner_username, photo_pet, pet_name, petType, species, pet_age, pet_gender)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(sql, [ownerName, ownerUsername, photo, name, species, age, gender], (err, result) => {
+  db.query(sql, [ownerName, ownerUsername, photo, name, type, species, age, gender], (err, result) => {
     if (err) {
       console.error("Error adding pet info:", err);
       return res.status(500).json({ success: false, error: "Database error" });

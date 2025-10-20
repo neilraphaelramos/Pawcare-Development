@@ -20,7 +20,7 @@ const VetConsultationAdmin = () => {
   // Fetch consultations
   const fetchOnlineConsult = async () => {
     try {
-      const res = await axios.get("/online_consult_fetch");
+      const res = await axios.get("/server-api/online_consult_fetch");
       setFetchOC(res.data.fetchData);
     } catch (err) {
       console.error("Error fetching consultations:", err);
@@ -35,7 +35,7 @@ const VetConsultationAdmin = () => {
     fetchOnlineConsult();
 
     // Initialize Socket.IO client only once
-    const socket = io('https://unconglutinated-anya-unhacked.ngrok-free.dev');
+    const socket = io('http://localhost:5001');
     socketRef.current = socket;
 
     // Define handlers

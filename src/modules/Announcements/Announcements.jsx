@@ -19,7 +19,7 @@ export default function Announcements() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await axios.get("/fetchAnnouncements");
+      const res = await axios.get("/server-api/fetchAnnouncements");
       if (res.data.success) {
         setAnnouncements(res.data.data);
       }
@@ -72,11 +72,11 @@ export default function Announcements() {
     try {
       if (editingAnnouncement) {
         await axios.put(
-          `/updateAnnouncement/${editingAnnouncement.id}`,
+          `/server-api/updateAnnouncement/${editingAnnouncement.id}`,
           form
         );
       } else {
-        await axios.post("/addAnnouncement", form);
+        await axios.post("/server-api/addAnnouncement", form);
       }
       fetchAnnouncements();
       closeModal();
@@ -89,7 +89,7 @@ export default function Announcements() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this announcement?")) return;
     try {
-      await axios.delete(`/deleteAnnouncement/${id}`);
+      await axios.delete(`/server-api/deleteAnnouncement/${id}`);
       fetchAnnouncements();
     } catch (err) {
       console.error("Error deleting announcement:", err);

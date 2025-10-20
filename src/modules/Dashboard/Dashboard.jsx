@@ -152,14 +152,14 @@ const categoryChartOptions = {
 function ServicesChart() {
   return (
 
-      <Bar data={servicesChartData} options={servicesChartOptions} />
+    <Bar data={servicesChartData} options={servicesChartOptions} />
   );
 }
 
 function OrdersByCategoryChart() {
   return (
 
-      <Bar data={categoryChartData} options={categoryChartOptions} />
+    <Bar data={categoryChartData} options={categoryChartOptions} />
   );
 }
 
@@ -180,400 +180,400 @@ export default function Dashboard() {
   const [unMess, setUnMess] = useState(0);
 
   useEffect(() => {
-      setAppointments([
-        {
-          id: 1,
-          petName: "Buddy",
-          owner: "John Doe",
-          time: "09:00 AM",
-          reason: "Vaccination",
-          avatar: "https://placedog.net/64/64?id=1",
-          date: new Date().toDateString(),
-          status: "Scheduled",
-        },
-        {
-          id: 2,
-          petName: "Mittens",
-          owner: "Jane Smith",
-          time: "11:30 AM",
-          reason: "Skin Allergy",
-          avatar: "https://placedog.net/64/64?id=2",
-          date: new Date().toDateString(),
-          status: "Scheduled",
-        },
-        {
-          id: 3,
-          petName: "Max",
-          owner: "Sarah Lee",
-          time: "02:00 PM",
-          reason: "Dental Check",
-          avatar: "https://placedog.net/64/64?id=3",
-          date: new Date().toDateString(),
-          status: "Done",
-        },
-      ]);
-  
-      setReservations([
-        {
-          id: 101,
-          petName: "Luna",
-          owner: "Carlos Mendoza",
-          reason: "Ear Check",
-          preferredDate: "2025-06-05",
-          time: "10:00 AM",
-          avatar: "https://placedog.net/64/64?id=5",
-          status: "Pending",
-        },
-        {
-          id: 102,
-          petName: "Tiger",
-          owner: "Mika Reyes",
-          reason: "Vaccination",
-          preferredDate: "2025-06-06",
-          time: "01:30 PM",
-          avatar: "https://placedog.net/64/64?id=6",
-          status: "Pending",
-        },
-      ]);
-  
-      setConsultations([
-        {
-          id: 201,
-          petName: "Charlie",
-          owner: "Anna Brown",
-          time: "03:00 PM",
-          reason: "Online Follow-up",
-          avatar: "https://placedog.net/64/64?id=7",
-          date: new Date().toDateString(),
-          status: "Scheduled",
-        },
-        {
-          id: 202,
-          petName: "Bella",
-          owner: "David Kim",
-          time: "04:30 PM",
-          reason: "Skin Rash Consultation",
-          avatar: "https://placedog.net/64/64?id=8",
-          date: new Date().toDateString(),
-          status: "Done",
-        },
-      ]);
-    }, []);
-  
-    const handleStatusUpdate = (id, newStatus, type = "appointments") => {
-      if (type === "appointments") {
-        setAppointments((prev) =>
-          prev.map((appt) =>
-            appt.id === id ? { ...appt, status: newStatus } : appt
-          )
-        );
-      } else if (type === "consultations") {
-        setConsultations((prev) =>
-          prev.map((consult) =>
-            consult.id === id ? { ...consult, status: newStatus } : consult
-          )
-        );
-      }
-    };
-  
-    const handleReservationAction = (id, action) => {
-      setReservations((prev) =>
-        prev.map((res) => (res.id === id ? { ...res, status: action } : res))
+    setAppointments([
+      {
+        id: 1,
+        petName: "Buddy",
+        owner: "John Doe",
+        time: "09:00 AM",
+        reason: "Vaccination",
+        avatar: "https://placedog.net/64/64?id=1",
+        date: new Date().toDateString(),
+        status: "Scheduled",
+      },
+      {
+        id: 2,
+        petName: "Mittens",
+        owner: "Jane Smith",
+        time: "11:30 AM",
+        reason: "Skin Allergy",
+        avatar: "https://placedog.net/64/64?id=2",
+        date: new Date().toDateString(),
+        status: "Scheduled",
+      },
+      {
+        id: 3,
+        petName: "Max",
+        owner: "Sarah Lee",
+        time: "02:00 PM",
+        reason: "Dental Check",
+        avatar: "https://placedog.net/64/64?id=3",
+        date: new Date().toDateString(),
+        status: "Done",
+      },
+    ]);
+
+    setReservations([
+      {
+        id: 101,
+        petName: "Luna",
+        owner: "Carlos Mendoza",
+        reason: "Ear Check",
+        preferredDate: "2025-06-05",
+        time: "10:00 AM",
+        avatar: "https://placedog.net/64/64?id=5",
+        status: "Pending",
+      },
+      {
+        id: 102,
+        petName: "Tiger",
+        owner: "Mika Reyes",
+        reason: "Vaccination",
+        preferredDate: "2025-06-06",
+        time: "01:30 PM",
+        avatar: "https://placedog.net/64/64?id=6",
+        status: "Pending",
+      },
+    ]);
+
+    setConsultations([
+      {
+        id: 201,
+        petName: "Charlie",
+        owner: "Anna Brown",
+        time: "03:00 PM",
+        reason: "Online Follow-up",
+        avatar: "https://placedog.net/64/64?id=7",
+        date: new Date().toDateString(),
+        status: "Scheduled",
+      },
+      {
+        id: 202,
+        petName: "Bella",
+        owner: "David Kim",
+        time: "04:30 PM",
+        reason: "Skin Rash Consultation",
+        avatar: "https://placedog.net/64/64?id=8",
+        date: new Date().toDateString(),
+        status: "Done",
+      },
+    ]);
+  }, []);
+
+  const handleStatusUpdate = (id, newStatus, type = "appointments") => {
+    if (type === "appointments") {
+      setAppointments((prev) =>
+        prev.map((appt) =>
+          appt.id === id ? { ...appt, status: newStatus } : appt
+        )
       );
-    };
-  
-    const chartData = [
-      { day: "Mon", patients: 5 },
-      { day: "Tue", patients: 8 },
-      { day: "Wed", patients: 6 },
-      { day: "Thu", patients: 9 },
-      { day: "Fri", patients: 4 },
-    ];
-  
-    const todayAppointments = appointments.filter(
-      (appt) => appt.date === selectedDate.toDateString() && appt.status !== "Done"
+    } else if (type === "consultations") {
+      setConsultations((prev) =>
+        prev.map((consult) =>
+          consult.id === id ? { ...consult, status: newStatus } : consult
+        )
+      );
+    }
+  };
+
+  const handleReservationAction = (id, action) => {
+    setReservations((prev) =>
+      prev.map((res) => (res.id === id ? { ...res, status: action } : res))
     );
-  
-    const todayConsultations = consultations.filter(
-      (consult) =>
-        consult.date === selectedDate.toDateString() && consult.status !== "Done"
-    );
+  };
+
+  const chartData = [
+    { day: "Mon", patients: 5 },
+    { day: "Tue", patients: 8 },
+    { day: "Wed", patients: 6 },
+    { day: "Thu", patients: 9 },
+    { day: "Fri", patients: 4 },
+  ];
+
+  const todayAppointments = appointments.filter(
+    (appt) => appt.date === selectedDate.toDateString() && appt.status !== "Done"
+  );
+
+  const todayConsultations = consultations.filter(
+    (consult) =>
+      consult.date === selectedDate.toDateString() && consult.status !== "Done"
+  );
 
   return (
-  <div className="admin-dashboard">
-    {}
-    <main className="admin-dashboard-main">
-      <header className="admin-dashboard-header">
-        <h2>Admin Dashboard</h2>
-        <input
-          type="text"
-          placeholder="Search pet, owner, or reason..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </header>
+    <div className="admin-dashboard">
+      { }
+      <main className="admin-dashboard-main">
+        <header className="admin-dashboard-header">
+          <h2>Admin Dashboard</h2>
+          <input
+            type="text"
+            placeholder="Search pet, owner, or reason..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </header>
 
-      <div className="admin-dashboard-main-content">
-        {/* Left Main Content */}
-        <div className="admin-dashboard-left">
-          {/* Metrics */}
-          <section className="admin-dashboard-metrics">
-          <div className="admin-dashboard-metric">
-            <div><FaStethoscope /> Today’s Appointments</div>
-            <span>{todApp}</span>
-          </div>
-          <div className="admin-dashboard-metric">
-            <div><FaDog /> Total Patients</div>
-            <span>{todPat}</span>
-          </div>
-          <div className="admin-dashboard-metric">
-            <div><FaPills /> Medications Low</div>
-            <span>{medLow}</span>
-          </div>
-          <div className="admin-dashboard-metric">
-            <div><FaEnvelope /> Unread Messages</div>
-            <span>{unMess}</span>
-          </div>
-        </section>
+        <div className="admin-dashboard-main-content">
+          {/* Left Main Content */}
+          <div className="admin-dashboard-left">
+            {/* Metrics */}
+            <section className="admin-dashboard-metrics">
+              <div className="admin-dashboard-metric">
+                <div><FaStethoscope /> Today’s Appointments</div>
+                <span>{todApp}</span>
+              </div>
+              <div className="admin-dashboard-metric">
+                <div><FaDog /> Total Patients</div>
+                <span>{todPat}</span>
+              </div>
+              <div className="admin-dashboard-metric">
+                <div><FaPills /> Medications Low</div>
+                <span>{medLow}</span>
+              </div>
+              <div className="admin-dashboard-metric">
+                <div><FaEnvelope /> Unread Messages</div>
+                <span>{unMess}</span>
+              </div>
+            </section>
 
 
-          {/* Chart */}
-          <section className="admin-dashboard-row">
-            <div className="charts-tabs-container">
-              <div className="charts-tab-buttons">
+            {/* Chart */}
+            <section className="admin-dashboard-row">
+              <div className="charts-tabs-container">
+                <div className="charts-tab-buttons">
+                  <button
+                    onClick={() => setActiveTab("appointments")}
+                    className={activeTab === "appointments" ? "active" : ""}
+                  >
+                    Appointments
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("category")}
+                    className={activeTab === "category" ? "active" : ""}
+                  >
+                    Orders
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("services")}
+                    className={activeTab === "services" ? "active" : ""}
+                  >
+                    Services
+                  </button>
+                </div>
+
+                <div className="charts-tab-content">
+                  {activeTab === "appointments" && (
+                    <div className="admin-dashboard-card-graph-box">
+                      <h3>Appointments Summary (6 Months)</h3>
+                      <Bar data={appointmentSummaryData} />
+                    </div>
+                  )}
+                  {activeTab === "category" && <OrdersByCategoryChart />}
+                  {activeTab === "services" && <ServicesChart />}
+                </div>
+              </div>
+            </section>
+
+
+            {/* Alerts */}
+            <section className="admin-dashboard-card" style={{ marginBottom: "1.5rem" }}>
+              <div className="admin-dashboard-tab-buttons">
                 <button
-                  onClick={() => setActiveTab("appointments")}
-                  className={activeTab === "appointments" ? "active" : ""}
+                  className={selectedTab === "appointments" ? "active" : ""}
+                  onClick={() => setSelectedTab("appointments")}
                 >
-                  Appointments
+                  <FaClipboardCheck /> Upcoming Appointments
                 </button>
                 <button
-                  onClick={() => setActiveTab("category")}
-                  className={activeTab === "category" ? "active" : ""}
+                  className={selectedTab === "consultations" ? "active" : ""}
+                  onClick={() => setSelectedTab("consultations")}
                 >
-                  Orders
+                  <FaVideo /> Online Consultations
                 </button>
                 <button
-                  onClick={() => setActiveTab("services")}
-                  className={activeTab === "services" ? "active" : ""}
+                  className={selectedTab === "reservations" ? "active" : ""}
+                  onClick={() => setSelectedTab("reservations")}
                 >
-                  Services
+                  <FaClipboardList /> Reservations
                 </button>
               </div>
 
-              <div className="charts-tab-content">
-                {activeTab === "appointments" && (
-                  <div className="admin-dashboard-card-graph-box">
-                    <h3>Appointments Summary (6 Months)</h3>
-                    <Bar data={appointmentSummaryData} />
-                  </div>
-                )}
-                {activeTab === "category" && <OrdersByCategoryChart />}
-                {activeTab === "services" && <ServicesChart />}
-              </div>
-            </div>
-          </section>
 
+              {/* Conditional Display */}
+              {selectedTab === "appointments" && (
+                <>
+                  <h3 style={{ marginBottom: "1rem" }}>
+                    Upcoming Appointments ({selectedDate.toDateString()})
+                  </h3>
+                  {todayAppointments.length === 0 ? (
+                    <p>No appointments scheduled.</p>
+                  ) : (
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {todayAppointments.map((appt) => (
+                        <li
+                          key={appt.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "1rem",
+                            background: "#edf2f7",
+                            borderRadius: "8px",
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                            padding: "1rem",
+                            marginBottom: "1rem",
+                          }}
+                        >
+                          <img
+                            src={appt.avatar}
+                            alt={appt.petName}
+                            style={{ borderRadius: "50%", width: 50, height: 50 }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <strong style={{ fontSize: "1rem" }}>{appt.petName}</strong> – {appt.reason}
+                            <br />
+                            <small style={{ color: "#666" }}>
+                              {appt.owner} • {appt.time}
+                            </small>
+                            <br />
+                            <small>Status: {appt.status}</small>
+                          </div>
+                          {appt.status === "Scheduled" && (
+                            <div style={{ display: "flex", gap: "0.5rem" }}>
+                              <button style={buttonStyles.green} onClick={() => handleStatusUpdate(appt.id, "Done", "appointments")}>Mark as Done</button>
+                              <button style={buttonStyles.red} onClick={() => handleStatusUpdate(appt.id, "Cancelled", "appointments")}>Cancel</button>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
 
-          {/* Alerts */}
-          <section className="admin-dashboard-card" style={{ marginBottom: "1.5rem" }}>
-                    <div className="admin-dashboard-tab-buttons">
-                    <button
-                      className={selectedTab === "appointments" ? "active" : ""}
-                      onClick={() => setSelectedTab("appointments")}
-                    >
-                      <FaClipboardCheck /> Upcoming Appointments
-                    </button>
-                    <button
-                      className={selectedTab === "consultations" ? "active" : ""}
-                      onClick={() => setSelectedTab("consultations")}
-                    >
-                      <FaVideo /> Online Consultations
-                    </button>
-                    <button
-                      className={selectedTab === "reservations" ? "active" : ""}
-                      onClick={() => setSelectedTab("reservations")}
-                    >
-                      <FaClipboardList /> Reservations
-                    </button>
-                  </div>
+              {selectedTab === "consultations" && (
+                <>
+                  <h3 style={{ marginBottom: "1rem" }}>
+                    Online Consultations ({selectedDate.toDateString()})
+                  </h3>
+                  {todayConsultations.length === 0 ? (
+                    <p>No consultations scheduled.</p>
+                  ) : (
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {todayConsultations.map((consult) => (
+                        <li
+                          key={consult.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "1rem",
+                            background: "#edf2f7",
+                            borderRadius: "8px",
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                            padding: "1rem",
+                            marginBottom: "1rem",
+                          }}
+                        >
+                          <img
+                            src={consult.avatar}
+                            alt={consult.petName}
+                            style={{ borderRadius: "50%", width: 50, height: 50 }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <strong style={{ fontSize: "1rem" }}>{consult.petName}</strong> – {consult.reason}
+                            <br />
+                            <small style={{ color: "#666" }}>
+                              {consult.owner} • {consult.time}
+                            </small>
+                            <br />
+                            <small>Status: {consult.status}</small>
+                          </div>
+                          {consult.status === "Scheduled" && (
+                            <div style={{ display: "flex", gap: "0.5rem" }}>
+                              <button style={buttonStyles.green} onClick={() => handleStatusUpdate(consult.id, "Done", "consultations")}>Mark as Done</button>
+                              <button style={buttonStyles.red} onClick={() => handleStatusUpdate(consult.id, "Cancelled", "consultations")}>Cancel</button>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
 
-          
-                    {/* Conditional Display */}
-          {selectedTab === "appointments" && (
-  <>
-    <h3 style={{ marginBottom: "1rem" }}>
-      Upcoming Appointments ({selectedDate.toDateString()})
-    </h3>
-    {todayAppointments.length === 0 ? (
-      <p>No appointments scheduled.</p>
-    ) : (
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {todayAppointments.map((appt) => (
-          <li
-            key={appt.id}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "1rem",
-              background: "#edf2f7",
-              borderRadius: "8px",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-              padding: "1rem",
-              marginBottom: "1rem",
-            }}
-          >
-            <img
-              src={appt.avatar}
-              alt={appt.petName}
-              style={{ borderRadius: "50%", width: 50, height: 50 }}
-            />
-            <div style={{ flex: 1 }}>
-              <strong style={{ fontSize: "1rem" }}>{appt.petName}</strong> – {appt.reason}
-              <br />
-              <small style={{ color: "#666" }}>
-                {appt.owner} • {appt.time}
-              </small>
-              <br />
-              <small>Status: {appt.status}</small>
-            </div>
-            {appt.status === "Scheduled" && (
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <button style={buttonStyles.green} onClick={() => handleStatusUpdate(appt.id, "Done", "appointments")}>Mark as Done</button>
-                <button style={buttonStyles.red} onClick={() => handleStatusUpdate(appt.id, "Cancelled", "appointments")}>Cancel</button>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-    )}
-  </>
-)}
+              {selectedTab === "reservations" && (
+                <>
+                  <h3 style={{ marginBottom: "1rem" }}>Reservations</h3>
+                  {reservations.length === 0 ? (
+                    <p>No reservations at the moment.</p>
+                  ) : (
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {reservations.map((res) => (
+                        <li
+                          key={res.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "1rem",
+                            background: "#edf2f7",
+                            borderRadius: "8px",
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                            padding: "1rem",
+                            marginBottom: "1rem",
+                          }}
+                        >
+                          <img
+                            src={res.avatar}
+                            alt={res.petName}
+                            style={{ borderRadius: "50%", width: 50, height: 50 }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <strong style={{ fontSize: "1rem" }}>{res.petName}</strong> – {res.reason}
+                            <br />
+                            <small style={{ color: "#666" }}>
+                              {res.owner} • {res.preferredDate} • {res.time}
+                            </small>
+                            <br />
+                            <small>Status: {res.status}</small>
+                          </div>
+                          {res.status === "Pending" && (
+                            <div style={{ display: "flex", gap: "0.5rem" }}>
+                              <button style={buttonStyles.green} onClick={() => handleReservationAction(res.id, "Confirmed")}>Confirm</button>
+                              <button style={buttonStyles.red} onClick={() => handleReservationAction(res.id, "Cancelled")}>Cancel</button>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
 
-{selectedTab === "consultations" && (
-  <>
-    <h3 style={{ marginBottom: "1rem" }}>
-      Online Consultations ({selectedDate.toDateString()})
-    </h3>
-    {todayConsultations.length === 0 ? (
-      <p>No consultations scheduled.</p>
-    ) : (
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {todayConsultations.map((consult) => (
-          <li
-            key={consult.id}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "1rem",
-              background: "#edf2f7",
-              borderRadius: "8px",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-              padding: "1rem",
-              marginBottom: "1rem",
-            }}
-          >
-            <img
-              src={consult.avatar}
-              alt={consult.petName}
-              style={{ borderRadius: "50%", width: 50, height: 50 }}
-            />
-            <div style={{ flex: 1 }}>
-              <strong style={{ fontSize: "1rem" }}>{consult.petName}</strong> – {consult.reason}
-              <br />
-              <small style={{ color: "#666" }}>
-                {consult.owner} • {consult.time}
-              </small>
-              <br />
-              <small>Status: {consult.status}</small>
-            </div>
-            {consult.status === "Scheduled" && (
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <button style={buttonStyles.green} onClick={() => handleStatusUpdate(consult.id, "Done", "consultations")}>Mark as Done</button>
-                <button style={buttonStyles.red} onClick={() => handleStatusUpdate(consult.id, "Cancelled", "consultations")}>Cancel</button>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-    )}
-  </>
-)}
-
-{selectedTab === "reservations" && (
-  <>
-    <h3 style={{ marginBottom: "1rem" }}>Reservations</h3>
-    {reservations.length === 0 ? (
-      <p>No reservations at the moment.</p>
-    ) : (
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {reservations.map((res) => (
-          <li
-            key={res.id}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "1rem",
-              background: "#edf2f7",
-              borderRadius: "8px",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-              padding: "1rem",
-              marginBottom: "1rem",
-            }}
-          >
-            <img
-              src={res.avatar}
-              alt={res.petName}
-              style={{ borderRadius: "50%", width: 50, height: 50 }}
-            />
-            <div style={{ flex: 1 }}>
-              <strong style={{ fontSize: "1rem" }}>{res.petName}</strong> – {res.reason}
-              <br />
-              <small style={{ color: "#666" }}>
-                {res.owner} • {res.preferredDate} • {res.time}
-              </small>
-              <br />
-              <small>Status: {res.status}</small>
-            </div>
-            {res.status === "Pending" && (
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <button style={buttonStyles.green} onClick={() => handleReservationAction(res.id, "Confirmed")}>Confirm</button>
-                <button style={buttonStyles.red} onClick={() => handleReservationAction(res.id, "Cancelled")}>Cancel</button>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-    )}
-  </>
-)}
-
-        </section>
+            </section>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
 
-    {/* Sidebar outside <main> */}
-    <aside className="admin-dashboard-right-panel">
-      <div className="admin-dashboard-calendar-widget-admin-dashboard-card">
-        <h4 className="admin-dashboard-widget-title"><FaCalendarAlt /> Calendar</h4>
-        <Calendar value={date} onChange={setDate} />
-      </div>
+      {/* Sidebar outside <main> */}
+      <aside className="admin-dashboard-right-panel">
+        <div className="admin-dashboard-calendar-widget-admin-dashboard-card">
+          <h4 className="admin-dashboard-widget-title"><FaCalendarAlt /> Calendar</h4>
+          <Calendar value={date} onChange={setDate} />
+        </div>
 
-      <div className="vet-dashboard-card vet-dashboard-reminders">
+        <div className="vet-dashboard-card vet-dashboard-reminders">
           <h3 style={{ marginBottom: "0.5rem", color: "#32b2b2", marginTop: "5px" }}>
             Reminders</h3>
           <ul style={{ listStyle: "none", padding: 0, maxHeight: 150, overflowY: "auto" }}>
             <li style={{ padding: "0.5rem 0", borderBottom: "1px solid #ddd" }}>
-              
+
               Submit monthly report
             </li>
             <li style={{ padding: "0.5rem 0", borderBottom: "1px solid #ddd" }}>
-              
+
               Review lab test results
             </li>
             <li style={{ padding: "0.5rem 0" }}>
-          
+
               Staff meeting at 4 PM
             </li>
           </ul>
@@ -585,20 +585,20 @@ export default function Dashboard() {
             Recent Activities</h3>
           <ul style={{ listStyle: "none", padding: 0, maxHeight: 150, overflowY: "auto" }}>
             <li style={{ padding: "0.5rem 0", borderBottom: "1px solid #ddd" }}>
-              
+
               Marked appointment with Buddy as done
             </li>
             <li style={{ padding: "0.5rem 0", borderBottom: "1px solid #ddd" }}>
-              
+
               Added new colleague Dr. Smith
             </li>
             <li style={{ padding: "0.5rem 0" }}>
-              
+
               Confirmed reservation for Luna
             </li>
           </ul>
         </div>
-    </aside>
-  </div>
-);
+      </aside>
+    </div>
+  );
 }

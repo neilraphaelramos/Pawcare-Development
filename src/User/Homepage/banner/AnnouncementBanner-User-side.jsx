@@ -6,27 +6,47 @@ function AnnouncementBanner({ onHeightChange }) {
   const [showBanner, setShowBanner] = useState(true);
   const bannerRef = useRef(null);
 
+  // Fetch announcement
   useEffect(() => {
     const fetchAnnouncement = async () => {
       try {
         const res = await axios.get("server-api/fetchAnnouncements");
+
         if (res.data.success && res.data.data.length > 0) {
-          setAnnouncement(res.data.data[0]);
+          const fetched = res.data.data[0];
+
+          // Check expiration before displaying
+          if (fetched.expiration_date) {
+            const expirationTime = new Date(fetched.expiration_date).getTime();
+            if (Date.now() >= expirationTime) {
+              setShowBanner(false);
+              return;
+            }
+          }
+
+          setAnnouncement(fetched);
+          setShowBanner(true);
+        } else {
+          // No announcements
+          setShowBanner(false);
         }
       } catch (err) {
         console.error("Error fetching announcement:", err);
+        setShowBanner(false);
       }
     };
+
     fetchAnnouncement();
   }, []);
 
+  // Adjust layout height
   useEffect(() => {
     if (bannerRef.current && onHeightChange) {
       onHeightChange(showBanner ? bannerRef.current.offsetHeight : 0);
     }
   }, [announcement, showBanner, onHeightChange]);
 
-  // Handle expiration
+  // Auto-hide on expiration
   useEffect(() => {
     if (!announcement || !announcement.expiration_date) return;
 

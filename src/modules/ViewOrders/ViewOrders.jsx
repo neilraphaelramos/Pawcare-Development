@@ -187,7 +187,7 @@ const ViewOrders = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axios.get('/fetch/orders');
+        const res = await axios.get('/server-api/fetch/orders');
         if (res.data.success) {
           // Group items under each order
           const grouped = {};

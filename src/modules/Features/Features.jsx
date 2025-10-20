@@ -28,7 +28,7 @@ export default function Features() {
   // 🔹 Read all features from backend
   const fetchFeatures = async () => {
     try {
-      const res = await axios.get("https://unconglutinated-anya-unhacked.ngrok-free.dev/fetchFeatures");
+      const res = await axios.get("/server-api/fetchFeatures");
       if (res.data.success) {
         setFeatures(res.data.data);
         console.log('loading')
@@ -65,9 +65,9 @@ export default function Features() {
 
     try {
       if (editingFeature) {
-        await axios.put(`/update_features/${editingFeature.id}`, form);
+        await axios.put(`/server-api/update_features/${editingFeature.id}`, form);
       } else {
-        await axios.post("/add_features", form);
+        await axios.post("/server-api/add_features", form);
       }
       fetchFeatures();
       closeModal();
@@ -80,7 +80,7 @@ export default function Features() {
   const handleDelete = async (featureId) => {
     if (!window.confirm("Are you sure you want to delete this feature?")) return;
     try {
-      await axios.delete(`/delete_features/${featureId}`);
+      await axios.delete(`/server-api/delete_features/${featureId}`);
       fetchFeatures();
     } catch (err) {
       console.error("Error deleting feature:", err);

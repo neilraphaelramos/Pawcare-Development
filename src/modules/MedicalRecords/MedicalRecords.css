@@ -26,7 +26,7 @@ body {
   background: #edf2f7;
   padding: 2rem;
   border-radius: 12px;
-   height: 100vh; 
+  height: 100vh;
 }
 
 .pet-records-title {
@@ -66,25 +66,37 @@ body {
 
 .search-input {
   flex: 1 1;
-    padding: 0.75rem 1rem;
-    border: 1px solid #cbd5e0;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    background-color: white;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: white;
 }
 
 
 /* Table-like layout */
-.pet-records-table {
+.admin-pet-records-table {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 6px;
+  width: 100%;
 }
 
-.pet-records-header,
-.pet-records-row {
+.admin-pet-records-header,
+.admin-pet-records-row {
   display: grid;
-  grid-template-columns: 120px 80px 120px 100px 90px 110px 160px 140px 1fr 60px;
+  grid-template-columns:
+    minmax(150px, 1.5fr) /* Owner Name */
+    80px                 /* Photo */
+    minmax(100px, 1fr)   /* Name */
+    minmax(80px, 0.8fr)  /* Pet Type */
+    minmax(120px, 1fr)   /* Species */
+    minmax(60px, 0.5fr)  /* Age */
+    minmax(80px, 0.8fr)  /* Gender */
+    minmax(100px, 1fr)   /* Condition */
+    minmax(100px, 1fr)   /* Last Visit */
+    minmax(140px, 1.5fr) /* Diagnosis */
+    80px;                /* Action */
   align-items: center;
   padding: 0.75rem 1rem;
   border-radius: 10px;
@@ -93,7 +105,7 @@ body {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
-.pet-records-header {
+.admin-pet-records-header {
   font-weight: bold;
   background-color: #e7f6f6;
 }
@@ -122,8 +134,9 @@ body {
   cursor: pointer;
   margin-top: 10px;
 }
+
 .pet-records-toolbar {
-  
+
   align-items: center;
   margin-bottom: 1rem;
   flex-wrap: wrap;
@@ -164,7 +177,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -218,7 +231,8 @@ body {
 
 .no-records {
   text-align: center;
-  grid-column: 1 / -1; /* span full width of grid */
+  grid-column: 1 / -1;
+  /* span full width of grid */
   padding: 12px;
   color: #888;
   font-style: italic;
@@ -375,6 +389,7 @@ body {
   margin: 0.25rem 0;
   font-size: 0.875rem;
 }
+
 .checkup-history-row-style {
   display: flex;
   flex-direction: column;
@@ -416,6 +431,7 @@ body {
   justify-content: center;
   align-items: center;
 }
+
 .modal-search-input {
   width: 100%;
   padding: 8px 12px;
@@ -425,6 +441,7 @@ body {
   font-size: 14px;
   margin-top: 12px;
 }
+
 /* Visit Detail Modal Overlay */
 .visit-detail-modal-overlay {
   position: fixed;
@@ -545,13 +562,14 @@ body {
     display: none;
   }
 }
+
 .mr-header-section {
   display: flex;
   align-items: center;
   margin-bottom: 2rem;
-    border-bottom: none;
+  border-bottom: none;
   padding-bottom: 1rem;
- 
+
 }
 
 .mr-clinic-logo {
@@ -661,6 +679,7 @@ body {
     opacity: 0;
     transform: scale(0.92);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -674,6 +693,7 @@ body {
   border-radius: 4px;
   font-family: inherit;
 }
+
 .detail-field {
   margin-bottom: 12px;
 }

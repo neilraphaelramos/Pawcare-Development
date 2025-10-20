@@ -14,6 +14,10 @@ export default function PetRecords() {
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [messageModal, setMessageModal] = useState('');
   const [showMessageModal, setShowMessageModal] = useState(false);
+  const [type, setType] = useState("");
+  const [species, setSpecies] = useState("");
+  const [speciesOptions, setSpeciesOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const APIENDPOINT = '/server-api';
 
@@ -40,6 +44,7 @@ export default function PetRecords() {
 
     formData.append('photo', form.photo.files[0]);
     formData.append('name', form.name.value);
+    formData.append('type', form.type.value);
     formData.append('species', form.species.value);
     formData.append('age', form.age.value);
     formData.append('gender', form.gender.value);
@@ -77,11 +82,46 @@ export default function PetRecords() {
     }
   };
 
-
   useEffect(() => {
     if (!user?.username) return;
     fetchPets();
   }, [user]);
+
+  useEffect(() => {
+    async function fetchBreeds() {
+      if (!type) {
+        setSpeciesOptions([]);
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const url =
+          type === "Dog"
+            ? "https://api.thedogapi.com/v1/breeds"
+            : "https://api.thecatapi.com/v1/breeds";
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const formatted = data.map((b) => ({
+          id: b.id,
+          name: b.name,
+        }));
+
+        setSpeciesOptions(formatted);
+      } catch (err) {
+        console.error("Failed to load breeds", err);
+        setSpeciesOptions([]);
+      } finally {
+        setLoading(false);
+        setSpecies("");
+      }
+    }
+
+    fetchBreeds();
+  }, [type]);
 
   const handleView = async (pet) => {
     try {
@@ -102,6 +142,7 @@ export default function PetRecords() {
     return (
       pet.ownerName.toLowerCase().includes(term) ||
       pet.name.toLowerCase().includes(term) ||
+      pet.petType.toLowerCase().includes(term) ||
       pet.species.toLowerCase().includes(term) ||
       pet.gender.toLowerCase().includes(term) ||
       pet.condition.toLowerCase().includes(term) ||
@@ -141,6 +182,7 @@ export default function PetRecords() {
         <div className="pet-records-header">
           <div>Photo</div>
           <div>Name</div>
+          <div>Pet Type</div>
           <div>Species</div>
           <div>Age</div>
           <div>Gender</div>
@@ -157,6 +199,7 @@ export default function PetRecords() {
                 <img src={`${APIENDPOINT}/uploads/${pet.photo}`} alt={pet.name} className="pet-thumb" />
               </div>
               <div>{pet.name}</div>
+              <div>{pet.petType}</div>
               <div>{pet.species}</div>
               <div>{pet.age} yrs</div>
               <div>{pet.gender}</div>
@@ -205,11 +248,36 @@ export default function PetRecords() {
               </div>
 
               <div className="form-group">
-                <label>Species</label>
-                <select name='species' required>
-                  <option value="">Select species</option>
+                <label>Pet Type</label>
+                <select
+                  name="type"
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  required
+                >
+                  <option value="">Select Type</option>
                   <option value="Dog">Dog</option>
                   <option value="Cat">Cat</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Species</label>
+                <select
+                  name="species"
+                  value={species}
+                  onChange={(e) => setSpecies(e.target.value)}
+                  required
+                  disabled={!type || loading}
+                >
+                  <option value="">
+                    {loading ? "Loading species..." : "Select species"}
+                  </option>
+                  {speciesOptions.map((opt) => (
+                    <option key={opt.id} value={opt.name}>
+                      {opt.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

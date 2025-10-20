@@ -25,7 +25,7 @@ const Accounts = () => {
 
   const handleAccounts = async () => {
     try {
-      const { data } = await axios.post("/data");
+      const { data } = await axios.post("/server-api/data");
 
       if (!Array.isArray(data)) {
         console.error("Invalid response format from server.");
@@ -43,7 +43,7 @@ const Accounts = () => {
     if (!window.confirm("Are you sure you want to update this account?")) return;
 
     try {
-      const response = await fetch("/update_account_admin", {
+      const response = await fetch("/server-api/update_account_admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -79,7 +79,7 @@ const Accounts = () => {
   const handleAddAccount = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("/add_account", newUser);
+      const res = await axios.post("/server-api/add_account", newUser);
       alert(res.data.message);
       closeModal();
       handleAccounts();
@@ -148,7 +148,7 @@ const Accounts = () => {
     if (!window.confirm("Are you sure you want to delete this account?")) return;
 
     try {
-      const response = await fetch("/delete_account", {
+      const response = await fetch("/server-api/delete_account", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

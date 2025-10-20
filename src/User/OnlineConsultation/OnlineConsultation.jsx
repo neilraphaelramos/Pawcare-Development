@@ -22,6 +22,7 @@ const OnlineConsultation = () => {
     owner_name: processName,
     pet_name: "",
     pet_type: "",
+    pet_species: "",
     concern_description: "",
     consult_type: "",
     file_payment: '',
@@ -43,6 +44,7 @@ const OnlineConsultation = () => {
   const [showModal, setShowModal] = useState(false);
   const [messageModal, setMessageModal] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [petList, setPetList] = useState([]);
 
   const handleInputChange = (e) => {
     setFillUp({ ...fillUp, [e.target.name]: e.target.value });
@@ -77,6 +79,7 @@ const OnlineConsultation = () => {
       formData.append("owner_name", fillUp.owner_name);
       formData.append("pet_name", fillUp.pet_name);
       formData.append("pet_type", fillUp.pet_type);
+      formData.append("pet_species", fillUp.pet_species);
       formData.append("concern_description", fillUp.concern_description);
       formData.append("consult_type", fillUp.consult_type);
       formData.append("file_payment", fillUp.file_payment);
@@ -114,6 +117,32 @@ const OnlineConsultation = () => {
     setFormSubmitted(isSubmitted);
     setStartCall(dataSetCall);
   }, []);
+
+  useEffect(() => {
+    const fetchPets = async () => {
+      try {
+        const res = await axios.get(`/server-api/fetch_pet/${user.username}`);
+        if (res.data.success) {
+          setPetList(res.data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching pet list:", err);
+      }
+    };
+    fetchPets();
+  }, [user.username]);
+
+  const handlePetSelect = (e) => {
+    const selectedPetName = e.target.value;
+    const selectedPet = petList.find(pet => pet.pet_name === selectedPetName);
+
+    setFillUp((prev) => ({
+      ...prev,
+      pet_name: selectedPetName,
+      pet_type: selectedPet ? selectedPet.petType : '',
+      pet_species: selectedPet ? selectedPet.species : '',
+    }));
+  };
 
   const handleCloseCall = () => {
     sessionStorage.removeItem("channelConsultID");
@@ -196,12 +225,36 @@ const OnlineConsultation = () => {
         <form className="consultation-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Pet Name</label>
-            <input name='pet_name' type="text" onChange={handleInputChange} required />
+            <select name="pet_name" onChange={handlePetSelect} required>
+              <option value="">Select your pet</option>
+              {petList.map((pet, idx) => (
+                <option key={idx} value={pet.pet_name}>
+                  {pet.pet_name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">
             <label>Pet Type</label>
-            <input name='pet_type' type="text" onChange={handleInputChange} required />
+            <input
+              name="pet_type"
+              type="text"
+              value={fillUp.pet_type}
+              placeholder='Your Pet Type'
+              readOnly
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Pet Species</label>
+            <input
+              name="pet_type"
+              type="text"
+              value={fillUp.pet_species}
+              placeholder='Your Pet Species'
+              readOnly
+            />
           </div>
 
           <div className="form-group">
@@ -219,9 +272,14 @@ const OnlineConsultation = () => {
             <label>Consultation Type</label>
             <select name='consult_type' onChange={handleInputChange} required>
               <option value="">Select type</option>
-              <option value="regular">Regular</option>
-              <option value="urgent">Urgent</option>
+              <option value="regular">Regular (300 pesos)</option>
+              <option value="urgent">Urgent (500 pesos)</option>
             </select>
+          </div>
+
+          <div className="form-group">
+            <label>Payment Proof (Screenshot or Receipt)</label>
+            <input type="file" accept="image/*,application/pdf" onChange={handleFileUpload} required />
           </div>
 
           <div className="form-group">
@@ -231,11 +289,6 @@ const OnlineConsultation = () => {
               <p><strong>Bank Transfer:</strong> BPI - Account No. 1234-5678-90</p>
               <p><strong>Note:</strong> Please include your name and pet's name in the reference.</p>
             </div>
-          </div>
-
-          <div className="form-group">
-            <label>Payment Proof (Screenshot or Receipt)</label>
-            <input type="file" accept="image/*,application/pdf" onChange={handleFileUpload} required />
           </div>
 
           <div className="form-group full-width">
@@ -316,7 +369,7 @@ const OnlineConsultation = () => {
             </div>
             <div className="messageconsult-footer">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={handleMessageModalClose}
                 className="messageconsult-close-btn"
               >
                 OK
