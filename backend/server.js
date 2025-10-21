@@ -6,6 +6,7 @@ const mysql = require('mysql');
 const bcrypt = require('bcrypt'); // 🔐 bcrypt for hashing
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
+const axios = require('axios')
 const app = express();
 const port = 5000;
 const { OAuth2Client } = require('google-auth-library');
@@ -16,6 +17,8 @@ const nodemailer = require('nodemailer')
 const crypto = require('crypto');
 require('dotenv').config();
 const path = require('path');
+
+const connectedUsers = new Map();
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -34,12 +37,13 @@ const upload = multer({ storage: storage });
 const PRIVATE_KEY = fs.readFileSync("./private_key.pk", "utf8");
 const JITSI_APP_ID = process.env.JAPP_ID;
 const JITSI_APP_API_KEY = process.env.JAAPI_KEY;
+const AICHAT_API_KEY2 = process.env.AICHAT_API_KEY2;
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL,      
-    pass: process.env.APP_PASS,       
+    user: process.env.EMAIL,
+    pass: process.env.APP_PASS,
   },
 });
 
@@ -84,6 +88,27 @@ io.on('connection', (socket) => {
 
     // Send to everyone EXCEPT the sender
     socket.to(consultID).emit('receiveMessage', message);
+  });
+
+  socket.on("registerUser", (userId) => {
+    socket.join(`user_${userId}`); // join personal room
+    console.log(`[Socket] User ${userId} registered in room user_${userId}`);
+  });
+
+  socket.on("sendNotification", (notification) => {
+    // Example structure of `notification`:
+    // { UID: 23, title: 'Appointment', type: 'Reminder', details: 'Checkup tomorrow' }
+
+    console.log(`[Socket] Sending notification to user_${notification.UID}`);
+
+    // Emit to that user's personal room
+    io.to(`user_${notification.UID}`).emit("newNotification", {
+      id: notification.id || Date.now(),
+      title_notify: notification.title,
+      type_notify: notification.type,
+      details: notification.details,
+      notify_date: new Date()
+    });
   });
 
   socket.on('disconnect', (reason) => {
@@ -1905,8 +1930,40 @@ app.post('/payment_setorder', async (req, res) => {
   }
 });
 
-app.get('/fetch_notification', (req, res) => {
+app.post("/api/notifications", (req, res) => {
+  const { UID, title_notify, type_notify, details } = req.body;
+  const notify_date = new Date();
 
+  const query = `
+    INSERT INTO notification (UID, title_notify, type_notify, details, notify_date)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+
+  db.query(query, [UID, title_notify, type_notify, details, notify_date], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+
+    // Emit real-time notification if user is connected
+    const socketId = connectedUsers.get(UID);
+    if (socketId) {
+      io.to(socketId).emit("newNotification", {
+        id: result.insertId,
+        title_notify,
+        type_notify,
+        details,
+        notify_date
+      });
+    }
+
+    res.json({ success: true, id: result.insertId });
+  });
+});
+
+app.get("/api/notifications/:uid", (req, res) => {
+  const { uid } = req.params;
+  db.query("SELECT * FROM notification WHERE UID = ? ORDER BY notify_date DESC", [uid], (err, rows) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(rows);
+  });
 });
 
 app.get("/fetchAnnouncements", (req, res) => {
@@ -2004,19 +2061,63 @@ app.get('/fetch/metric_dashboard/:uid/:username', (req, res) => {
 
   const appointQuery = `SELECT COUNT(*) AS totalAppointments FROM appointments_tables WHERE UID = ?`;
   const petQuery = `SELECT COUNT(*) AS totalPets FROM pet_medical_records WHERE owner_username = ?`;
-
+  const notifyQuery = `SELECT COUNT(*) AS totalNotification from notification WHERE UID = ?`
   db.query(appointQuery, [uid], (err1, appointRes) => {
     if (err1) return res.status(500).json({ error: 'Failed to fetch appointments' });
 
     db.query(petQuery, [username], (err2, petRes) => {
       if (err2) return res.status(500).json({ error: 'Failed to fetch pet records' });
 
-      res.json({
-        totalAppointments: appointRes[0].totalAppointments,
-        totalPets: petRes[0].totalPets
-      });
+      db.query(notifyQuery, [uid], (err3, notifyRes) => {
+        if (err3) return res.status(500).json({ error: 'Failed to fetch notification' });
+
+        res.json({
+          totalAppointments: appointRes[0].totalAppointments,
+          totalPets: petRes[0].totalPets,
+          totalNotify: notifyRes[0].totalNotification
+        });
+      })
     });
   });
+});
+
+app.post("/api/ask-ai", async (req, res) => {
+  const { message } = req.body;
+
+  if (!message) return res.status(400).json({ error: "Message is required." });
+
+  try {
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${AICHAT_API_KEY2}`,
+      {
+        contents: [
+          {
+            parts: [
+              {
+                text: `You are Dr. Paws — a friendly, professional veterinarian. 
+                      Respond with empathy, clear explanations, and practical advice. 
+                      Keep your tone caring and conversational. 
+                      You may mention basic pet medications, but always remind users to consult a licensed vet first. 
+                      Question: ${message}`
+              }
+            ]
+          }
+        ]
+      },
+      {
+        headers: { "Content-Type": "application/json" }
+      }
+    );
+
+    const aiReply =
+      response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "I'm sorry, I couldn’t process that request.";
+
+    res.json({ reply: aiReply });
+  } catch (error) {
+    console.error("Error calling Google AI:", error.response?.data || error.message);
+    res.status(500).json({ reply: "Sorry, I couldn't process your request." });
+  }
 });
 
 app.listen(port, async () => {

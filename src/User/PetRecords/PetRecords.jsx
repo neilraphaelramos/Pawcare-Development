@@ -64,6 +64,17 @@ export default function PetRecords() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
+      try {
+        await axios.post(`/server-api/api/notifications`, {
+          UID: user.id,
+          title_notify: "New Pet Added",
+          type_notify: "Pet Record",
+          details: `You added a new pet named ${form.name.value} to your medical records.`,
+        });
+      } catch (notifyErr) {
+        console.error("Notification error:", notifyErr);
+      }
+
       if (res.data.success) {
         setShowMessageModal(true);
         setMessageModal('Pet added successfully!');

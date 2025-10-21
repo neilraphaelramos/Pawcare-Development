@@ -31,7 +31,7 @@ const UserInventory = () => {
 
   const handleMessageModal = () => {
     setPaymentSuccess(false);
-    setMessageModal(false);
+    setShowMessageModal(false);
     setMessageModal('');
   }
 
@@ -46,6 +46,15 @@ const UserInventory = () => {
       setShowMessageModal(true);
       setMessageModal('Please select a payment method');
       return;
+    }
+
+    for (const item of cart) {
+      const currentStock = items.find(i => i.id === item.id)?.quantity || 0;
+      if (item.qty > currentStock) {
+        setShowMessageModal(true);
+        setMessageModal(`⚠️ "${item.name}" only has ${currentStock} left in stock.`);
+        return;
+      }
     }
 
     const fullAddress = `${deliveryInfo.houseStreet}, ${deliveryInfo.barangay}, ${deliveryInfo.municipality}, ${deliveryInfo.province}${deliveryInfo.landmark ? ` (${deliveryInfo.landmark})` : ''}`;
@@ -74,6 +83,17 @@ const UserInventory = () => {
     try {
       const res = await axios.post('/server-api/payment_setorder', payload);
 
+      try {
+        await axios.post('/server-api/api/notifications', {
+          UID: user.id,
+          title_notify: 'Order Placed Successfully',
+          type_notify: 'order',
+          details: `Your order totaling ₱${totalAmount} has been placed successfully.`,
+        });
+      } catch (notifyErr) {
+        console.error("Notification error:", notifyErr);
+      }
+
       if (res.data.success) {
         if (paymentMethod.toLowerCase() === 'cod') {
           setShowMessageModal(true);
@@ -88,6 +108,7 @@ const UserInventory = () => {
           setPaymentMethod('');
           window.location.href = res.data.redirectUrl;
         }
+
       } else {
         setMessageModal(res.data.message || 'Failed to place order')
       }
@@ -128,8 +149,22 @@ const UserInventory = () => {
 
   // 🛒 Cart functions
   const addToCart = (item) => {
+    if (item.quantity === 0) {
+      setShowMessageModal(true);
+      setMessageModal(`❌ "${item.name}" is out of stock.`);
+      return;
+    }
+
     const exists = cart.find(cartItem => cartItem.id === item.id);
+
     if (exists) {
+      // prevent adding more than available
+      if (exists.qty + 1 > item.quantity) {
+        setShowMessageModal(true);
+        setMessageModal(`⚠️ Only ${item.quantity} units of "${item.name}" are available.`);
+        return;
+      }
+
       setCart(cart.map(cartItem =>
         cartItem.id === item.id ? { ...cartItem, qty: cartItem.qty + 1 } : cartItem
       ));
@@ -137,6 +172,7 @@ const UserInventory = () => {
       setCart([...cart, { ...item, qty: 1 }]);
     }
   };
+
 
   const handleViewOrders = async () => {
     try {
@@ -175,7 +211,21 @@ const UserInventory = () => {
   }, [location]);
 
   const removeFromCart = (id) => setCart(cart.filter(item => item.id !== id));
-  const increaseQty = (id) => setCart(cart.map(item => item.id === id ? { ...item, qty: item.qty + 1 } : item));
+  const increaseQty = (id) => {
+    const itemInCart = cart.find(i => i.id === id);
+    const inventoryItem = items.find(i => i.id === id);
+
+    if (!itemInCart || !inventoryItem) return;
+
+    if (itemInCart.qty < inventoryItem.quantity) {
+      setCart(cart.map(item =>
+        item.id === id ? { ...item, qty: item.qty + 1 } : item
+      ));
+    } else {
+      setShowMessageModal(true);
+      setMessageModal(`⚠️ Only ${inventoryItem.quantity} units of "${inventoryItem.name}" are available.`);
+    }
+  };
   const decreaseQty = (id) => setCart(cart.map(item => item.id === id && item.qty > 1 ? { ...item, qty: item.qty - 1 } : item));
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.qty, 0).toFixed(2);
 
@@ -221,11 +271,33 @@ const UserInventory = () => {
 
         <div className="inventory-grid scrollable-area">
           {filteredInventory.map(item => (
-            <div key={item.id} className="inventory-card">
-              <img src={item.image} alt={item.name} />
+            <div
+              key={item.id}
+              className={`inventory-card ${item.quantity === 0 ? 'out-of-stock' : ''}`}
+            >
+              <div className="product-image-wrapper">
+                <img src={item.image} alt={item.name} className="product-image" />
+
+                {item.quantity === 0 && (
+                  <div className="outofstock-overlay">
+                    <img
+                      src="/images/outofstockimg.png"
+                      alt="Out of Stock"
+                      className="outofstock-image"
+                    />
+                  </div>
+                )}
+              </div>
+
               <h3>{item.name}</h3>
               <p>₱{item.price.toFixed(2)}</p>
-              <button onClick={() => addToCart(item)}>Add to Cart</button>
+
+              <button
+                onClick={() => item.quantity > 0 && addToCart(item)}
+                disabled={item.quantity === 0}
+              >
+                {item.quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+              </button>
             </div>
           ))}
         </div>

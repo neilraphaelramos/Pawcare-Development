@@ -100,6 +100,12 @@ const Appointment = () => {
 
     const dateStr = selectedDate.toLocaleDateString('en-CA');
 
+    const readableDate = selectedDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
     const data = {
       set_date: dateStr, // YYYY-MM-DD
       set_time: selectedTime,
@@ -109,6 +115,18 @@ const Appointment = () => {
 
     try {
       const res = await axios.post('http://localhost:5000/appointments', data);
+
+      try {
+        await axios.post(`/server-api/api/notifications`, {
+          UID: user.id,
+          title_notify: "Appointment Reserved",
+          type_notify: "Appointment",
+          details: `You have successfully reserved an appointment on ${readableDate} at ${selectedTime}. Please wait for confirmation.`,
+        });
+      } catch (notifyErr) {
+        console.error("Notification error:", notifyErr);
+      }
+
       setShowModal(true);
       setMessageModal(`Appointment reserved on ${res.data.message}`)
       setSelectedDate(null);

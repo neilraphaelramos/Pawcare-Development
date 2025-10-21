@@ -25,6 +25,7 @@ const Dashboard = () => {
   const [showChat, setShowChat] = useState(true);
   const [totalPets, setTotalPets] = useState(0);
   const [totalAppointment, setTotalAppointment] = useState(0);
+  const [totalNotify, setTotalNotify] = useState(0);
   const navigate = useNavigate();
   const handleAddAppointment = () => {
     navigate("/users/appointments");
@@ -120,6 +121,7 @@ const Dashboard = () => {
       const res = await axios.get(`/server-api/fetch/metric_dashboard/${user.id}/${user.username}`);
       setTotalPets(res.data.totalPets);
       setTotalAppointment(res.data.totalAppointments);
+      setTotalNotify(res.data.totalNotify)
     } catch (err) {
       console.error('Error fetching Metric:', err);
     }
@@ -148,7 +150,7 @@ const Dashboard = () => {
           </div>
           <div className="user-dashboard-metric">
             <div><FaBell /> Notifications</div>
-            <span>{0}</span>
+            <span>{totalNotify}</span>
           </div>
           <div className="user-dashboard-metric">
             <div><FaUserMd /> Active Vets</div>

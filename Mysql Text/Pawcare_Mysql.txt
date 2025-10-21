@@ -114,11 +114,17 @@ CREATE TABLE notification (
 	notify_id int AUTO_INCREMENT NOT NULL,
     UID int not NULL,
     title_notify VARCHAR(200) NOT NULL,
-    type_notify ENUM('Appointments','Online Consultations','Stock Alerts') NOT NULL,
+    type_notify VARCHAR(100) NOT NULL,
     details TEXT NOT NULL,
     notify_date DATETIME NOT NULL,
-    PRIMARY KEY (notify_id)
-);    
+    isRead TINYINT(1) DEFAULT 0 NOT NULL,
+    PRIMARY KEY (notify_id),
+    
+    CONSTRAINT nk_user
+    	FOREIGN KEY (UID) REFERENCES user_credentials(id)
+    	ON DELETE CASCADE
+    	ON UPDATE CASCADE
+);     
 
 CREATE TABLE pet_medical_records (
 	id_medical_record INT AUTO_INCREMENT NOT NULL,

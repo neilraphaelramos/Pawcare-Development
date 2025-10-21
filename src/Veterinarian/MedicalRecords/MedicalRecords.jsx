@@ -26,6 +26,15 @@ export default function PetRecords() {
     status: '',
     completed: ''
   });
+  const [type, setType] = useState("");
+  const [species, setSpecies] = useState("");
+  const [speciesOptions, setSpeciesOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const [editType, setEditType] = useState("");
+  const [editSpecies, setEditSpecies] = useState("");
+  const [editSpeciesOptions, setEditSpeciesOptions] = useState([]);
+  const [editLoading, setEditLoading] = useState(false);
 
   const APIENDPOINT = '/server-api';
 
@@ -39,6 +48,21 @@ export default function PetRecords() {
         setSelectedPet({ ...pet, checkups: [] }); // fallback
       });
   };
+
+  const resetAddForm = () => {
+    setType("");
+    setSpecies("");
+    setSpeciesOptions([]);
+    setPreviewImage(null);
+  };
+
+  const resetEditForm = () => {
+    setEditData(null);
+    setEditType("");
+    setEditSpecies("");
+    setEditSpeciesOptions([]);
+  };
+
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -73,6 +97,7 @@ export default function PetRecords() {
     formData.append("owner_name", form.ownerName.value);
     formData.append("user_name", form.userName.value);
     formData.append("pet_name", form.name.value);
+    formData.append('type', form.type.value);
     formData.append("species", form.species.value);
     formData.append("pet_age", form.age.value);
     formData.append("pet_gender", form.gender.value);
@@ -115,7 +140,8 @@ export default function PetRecords() {
     formData.append("owner_name", form.ownerName.value);
     formData.append("user_name", form.userName.value);
     formData.append("pet_name", form.name.value);
-    formData.append("species", form.species.value);
+    formData.append("type", editType);
+    formData.append("species", editSpecies);
     formData.append("pet_age", form.age.value);
     formData.append("pet_gender", form.gender.value);
     formData.append("pet_condition", form.condition.value);
@@ -150,11 +176,89 @@ export default function PetRecords() {
       .catch((err) => console.error("Error fetching pets:", err));
   }, []);
 
+  useEffect(() => {
+    async function fetchBreeds() {
+      if (!type) {
+        setSpeciesOptions([]);
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const url =
+          type === "Dog"
+            ? "https://api.thedogapi.com/v1/breeds"
+            : "https://api.thecatapi.com/v1/breeds";
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const formatted = data.map((b) => ({
+          id: b.id,
+          name: b.name,
+        }));
+
+        setSpeciesOptions(formatted);
+      } catch (err) {
+        console.error("Failed to load breeds", err);
+        setSpeciesOptions([]);
+      } finally {
+        setLoading(false);
+        setSpecies("");
+      }
+    }
+
+    fetchBreeds();
+  }, [type]);
+
+  useEffect(() => {
+    if (editData) {
+      setEditType(editData.petType || "");
+      setEditSpecies(editData.species || "");
+    }
+  }, [editData]);
+
+  useEffect(() => {
+    async function fetchEditSpecies() {
+      if (!editType) {
+        setEditSpeciesOptions([]);
+        return;
+      }
+
+      setEditLoading(true);
+
+      try {
+        const url =
+          editType === "Dog"
+            ? "https://api.thedogapi.com/v1/breeds"
+            : "https://api.thecatapi.com/v1/breeds";
+
+        const res = await fetch(url);
+        const data = await res.json();
+        const formatted = data.map((b) => ({
+          id: b.id,
+          name: b.name,
+        }));
+
+        setEditSpeciesOptions(formatted);
+      } catch (err) {
+        console.error("Failed to fetch species for edit", err);
+        setEditSpeciesOptions([]);
+      } finally {
+        setEditLoading(false);
+      }
+    }
+
+    fetchEditSpecies();
+  }, [editType]);
+
   const filteredPets = pets.filter((pet) => {
     const term = searchTerm.toLowerCase();
     return (
       pet.ownerName.toLowerCase().includes(term) ||
       pet.name.toLowerCase().includes(term) ||
+      pet.petType.toLowerCase().includes(term) ||
       pet.species.toLowerCase().includes(term) ||
       pet.gender.toLowerCase().includes(term) ||
       pet.condition.toLowerCase().includes(term) ||
@@ -214,9 +318,6 @@ export default function PetRecords() {
 
         setAddingRecord(false);
         setNewRecord({
-          ownerEmail: '',
-          ownerAddress: '',
-          ownerPhoneNum: '',
           day: '',
           date: '',
           service: '',
@@ -291,11 +392,12 @@ export default function PetRecords() {
         </div>
       </div>
 
-      <div className="pet-records-table">
-        <div className="pet-records-header">
+      <div className="admin-pet-records-table">
+        <div className="admin-pet-records-header">
           <div>Owner Name</div>
           <div>Photo</div>
           <div>Name</div>
+          <div>Pet Type</div>
           <div>Species</div>
           <div>Age</div>
           <div>Gender</div>
@@ -307,12 +409,13 @@ export default function PetRecords() {
 
         {filteredPets.length > 0 ? (
           filteredPets.map((pet) => (
-            <div className="pet-records-row" key={pet.id}>
+            <div className="admin-pet-records-row" key={pet.id}>
               <div>{pet.ownerName}</div>
               <div>
                 <img src={`${APIENDPOINT}/uploads/${pet.photo}`} alt={pet.name} className="pet-thumb" />
               </div>
               <div>{pet.name}</div>
+              <div>{pet.petType}</div>
               <div>{pet.species}</div>
               <div>{pet.age} yrs</div>
               <div>{pet.gender}</div>
@@ -367,17 +470,107 @@ export default function PetRecords() {
 
             {addingRecord && (
               <form className="new-record-form" onSubmit={handleNewRecordSubmit}>
-                <input type="text" name="ownerEmail" placeholder="Email" value={newRecord.ownerEmail} onChange={handleNewRecordChange} required />
-                <input type="text" name="ownerAddress" placeholder="Address" value={newRecord.ownerAddress} onChange={handleNewRecordChange} required />
-                <input type="text" name="ownerPhoneNum" placeholder="Phone Number" value={newRecord.ownerPhoneNum} onChange={handleNewRecordChange} required />
-                <input type="text" name="day" placeholder="Day" value={newRecord.day} onChange={handleNewRecordChange} required />
-                <input type="date" name="date" placeholder="Date" value={newRecord.date} onChange={handleNewRecordChange} required />
-                <input type="text" name="service" placeholder="Service Type" value={newRecord.service} onChange={handleNewRecordChange} required />
-                <input type="text" name="complaint" placeholder="Main Complaint" value={newRecord.complaint} onChange={handleNewRecordChange} required />
-                <input type="text" name="diagnosis" placeholder="Diagnosis" value={newRecord.diagnosis} onChange={handleNewRecordChange} required />
-                <input type="text" name="status" placeholder="Treatment Status" value={newRecord.status} onChange={handleNewRecordChange} required />
-                <input type="date" name="completed" placeholder="Completed On" value={newRecord.completed} onChange={handleNewRecordChange} required />
-                <button type="submit" className="submit-btn">Save</button>
+                <input
+                  type="text"
+                  name="ownerEmail"
+                  placeholder="Email"
+                  value={newRecord.ownerEmail}
+                  onChange={handleNewRecordChange}
+                  required
+                  className="addvisit-input"
+                />
+                <input
+                  type="text"
+                  name="ownerAddress"
+                  placeholder="Address"
+                  value={newRecord.ownerAddress}
+                  onChange={handleNewRecordChange}
+                  required
+                  className="addvisit-input"
+                />
+                <input
+                  type="text"
+                  name="ownerPhoneNum"
+                  placeholder="Phone Number"
+                  value={newRecord.ownerPhoneNum}
+                  onChange={handleNewRecordChange}
+                  required
+                  className="addvisit-input"
+                />
+                <input
+                  type="text"
+                  name="day"
+                  placeholder="Day"
+                  value={newRecord.day}
+                  onChange={handleNewRecordChange}
+                  required
+                  className="addvisit-input"
+                />
+                <div className="addvisit-input-group">
+                  <input
+                  type="date"
+                  name="date"
+                  placeholder="Date"
+                  value={newRecord.date}
+                  onChange={handleNewRecordChange}
+                  required
+                  className="addvisit-input"
+                />
+                  <label htmlFor="completed" className="addvisit-label">
+                    Date Visit
+                  </label>
+                </div>
+                
+                <input
+                  type="text"
+                  name="service"
+                  placeholder="Service Type"
+                  value={newRecord.service}
+                  onChange={handleNewRecordChange}
+                  required
+                  className="addvisit-input"
+                />
+                <input
+                  type="text"
+                  name="complaint"
+                  placeholder="Main Complaint"
+                  value={newRecord.complaint}
+                  onChange={handleNewRecordChange}
+                  required
+                  className="addvisit-input"
+                />
+                <input
+                  type="text"
+                  name="diagnosis"
+                  placeholder="Diagnosis"
+                  value={newRecord.diagnosis}
+                  onChange={handleNewRecordChange}
+                  required
+                  className="addvisit-input"
+                />
+                <input
+                  type="text"
+                  name="status"
+                  placeholder="Treatment Status"
+                  value={newRecord.status}
+                  onChange={handleNewRecordChange}
+                  required
+                  className="addvisit-input"
+                />
+                <div className="addvisit-input-group">
+                  <input
+                    type="date"
+                    id="completed"
+                    name="completed"
+                    value={newRecord.completed}
+                    onChange={handleNewRecordChange}
+                    required
+                    className="addvisit-input"
+                  />
+                  <label htmlFor="completed" className="addvisit-label">
+                    Completed On
+                  </label>
+                </div>
               </form>
             )}
 
@@ -687,10 +880,31 @@ export default function PetRecords() {
                 </div>
 
                 <div className="add-form-group">
-                  <select name="species" required defaultValue="">
-                    <option value="" disabled>Select Species</option>
+                  <select
+                    name="type"
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                    required
+                  >
+                    <option value="">Select Type</option>
                     <option value="Dog">Dog</option>
                     <option value="Cat">Cat</option>
+                  </select>
+                  <select
+                    name="species"
+                    value={species}
+                    onChange={(e) => setSpecies(e.target.value)}
+                    required
+                    disabled={!type || loading}
+                  >
+                    <option value="">
+                      {loading ? "Loading species..." : "Select species"}
+                    </option>
+                    {speciesOptions.map((opt) => (
+                      <option key={opt.id} value={opt.name}>
+                        {opt.name}
+                      </option>
+                    ))}
                   </select>
                   <select name="gender" required defaultValue="">
                     <option value="" disabled>Select Gender</option>
@@ -710,7 +924,16 @@ export default function PetRecords() {
 
                 <div className="add-button-row">
                   <button type="submit" className="add-add-btn">Add Pet</button>
-                  <button type="button" className="cancel-btn" onClick={() => setShowAddPetModal(false)}>Cancel</button>
+                  <button
+                    type="button"
+                    className="cancel-btn"
+                    onClick={() => {
+                      setShowAddPetModal(false);
+                      resetAddForm();
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             </form>
@@ -755,17 +978,44 @@ export default function PetRecords() {
                 </div>
 
                 <div className="edit-form-group">
-                  <select name="species" required defaultValue={editData?.species || ""}>
-                    <option value="" disabled>Select Species</option>
+                  <select
+                    name="type"
+                    required
+                    value={editType}
+                    onChange={(e) => {
+                      setEditType(e.target.value);
+                      setEditSpecies(""); // reset species when changing type
+                    }}
+                  >
+                    <option value="" disabled>Select Type</option>
                     <option value="Dog">Dog</option>
                     <option value="Cat">Cat</option>
                   </select>
+
+                  <select
+                    name="species"
+                    required
+                    value={editSpecies}
+                    onChange={(e) => setEditSpecies(e.target.value)}
+                    disabled={!editType || editLoading}
+                  >
+                    <option value="">
+                      {editLoading ? "Loading species..." : "Select species"}
+                    </option>
+                    {editSpeciesOptions.map((opt) => (
+                      <option key={opt.id} value={opt.name}>
+                        {opt.name}
+                      </option>
+                    ))}
+                  </select>
+
                   <select name="gender" required defaultValue={editData?.gender || ""}>
                     <option value="" disabled>Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                   </select>
                 </div>
+
 
                 <div className="edit-form-group">
                   <input name="condition" type="text" placeholder="Condition" defaultValue={editData?.condition} required />
@@ -778,7 +1028,16 @@ export default function PetRecords() {
 
                 <div className="edit-button-row">
                   <button type="submit" className="edit-add-btn">Update Pet</button>
-                  <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
+                  <button
+                    type="button"
+                    className="cancel-btn"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      resetEditForm();
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             </form>

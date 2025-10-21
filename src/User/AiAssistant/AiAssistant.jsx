@@ -1,73 +1,100 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "./AiAssistant.css";
 
 const frequentQuestions = [
-  {
-    question: "Why is my dog vomiting?",
-    answer:
-      "Vomiting in dogs can be caused by various issues such as dietary indiscretion, infections, parasites, or more serious conditions. If it persists, please consult a veterinarian."
-  },
-  {
-    question: "Can my cat be vaccinated today?",
-    answer:
-      "Yes, cats can be vaccinated as long as they are healthy. It's best to have a vet check them first to confirm there's no underlying issue."
-  },
-  {
-    question: "How often should I deworm my pet?",
-    answer:
-      "Most pets should be dewormed every 3 months, but frequency can vary based on age, lifestyle, and local risks. Consult your vet for a tailored plan."
-  }
+  { question: "Why is my dog vomiting?" },
+  { question: "Can my cat be vaccinated today?" },
+  { question: "How often should I deworm my pet?" }
 ];
 
 const AiChatBox = ({ onClose }) => {
   const [messages, setMessages] = useState([
-    { sender: "ai", text: "Hello! I’m your AI Chat Bot. Ask me anything!" }
+    { sender: "ai", text: "Hello! I’m your AI Assistant, Dr. Paw. Ask me anything!" }
   ]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
 
-  const handleSend = () => {
-    if (input.trim() === "") return;
-    const userMessage = { sender: "user", text: input };
-    const aiResponse = {
-      sender: "ai",
-      text:
-        "Thanks for your question! I'm analyzing it and will get back to you shortly. 😊"
-    };
-    setMessages([...messages, userMessage, aiResponse]);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const sendMessage = async (msg) => {
+    if (!msg.trim()) return;
+    const userMessage = { sender: "user", text: msg };
+    setMessages(prev => [...prev, userMessage]);
     setInput("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/server-api/api/ask-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg })
+      });
+      const data = await response.json();
+      const aiMessage = { sender: "ai", text: data.reply };
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (err) {
+      setMessages(prev => [
+        ...prev,
+        { sender: "ai", text: "Oops! Something went wrong. Please try again." }
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleQuestionClick = (q) => {
-    const userMessage = { sender: "user", text: q.question };
-    const aiMessage = { sender: "ai", text: q.answer };
-    setMessages([...messages, userMessage, aiMessage]);
+    sendMessage(q.question);
   };
 
   return (
     <div className="ai-chatbox-container">
       <div className="ai-chatbox-header">
-        <span>🐾 AI Chat Bot</span>
+        <span>🐾 AI Assistant</span>
         <button onClick={onClose}>✕</button>
       </div>
 
       <div className="ai-chatbox-body">
         {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`ai-message ${msg.sender === "ai" ? "ai" : "user"}`}
-          >
-            {msg.text}
+          <div key={idx} className={`ai-message ${msg.sender === "ai" ? "ai" : "user"}`}>
+            {msg.sender === "ai" ? (
+              <div>
+                <div className="ai-avatar">🐾 Dr. Paws</div>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {msg.text}
+                </ReactMarkdown>
+              </div>
+            ) : (
+              msg.text
+            )}
           </div>
         ))}
 
-        <div className="ai-faq-suggestions">
-          <p className="faq-title">💡 Common Questions:</p>
-          {frequentQuestions.map((q, i) => (
-            <button key={i} onClick={() => handleQuestionClick(q)}>
-              {q.question}
-            </button>
-          ))}
+        {loading && <div className="ai-message ai">Typing...</div>}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Collapsible Common Questions */}
+      <div className="ai-faq-footer">
+        <div className="ai-faq-toggle" onClick={() => setFaqOpen(!faqOpen)}>
+          <span>💡 Common Questions</span>
+          <span>{faqOpen ? "▲" : "▼"}</span>
         </div>
+        {faqOpen && (
+          <div className="ai-faq-list">
+            {frequentQuestions.map((q, i) => (
+              <button key={i} onClick={() => handleQuestionClick(q)}>
+                {q.question}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="ai-chatbox-footer">
@@ -76,9 +103,9 @@ const AiChatBox = ({ onClose }) => {
           placeholder="Type your message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
         />
-        <button onClick={handleSend}>Send</button>
+        <button onClick={() => sendMessage(input)} className="send-ai-enter">Send</button>
       </div>
     </div>
   );

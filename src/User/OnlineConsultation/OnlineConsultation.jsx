@@ -88,6 +88,18 @@ const OnlineConsultation = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+      try {
+        await axios.post('/server-api/api/notifications', {
+          UID: user.id,
+          title_notify: 'Submit Request Successfully',
+          type_notify: 'Online Consultation',
+          details: `Thank you for submitting the Online Consultation Request. 
+                    Please wait for our veterinarian to review your request.`,
+        });
+      } catch (notifyErr) {
+        console.error("Notification error:", notifyErr);
+      }
+
       if (!res.data.success) {
         setShowModal(true);
         setMessageModal('Your Request Error. Please try again!')
