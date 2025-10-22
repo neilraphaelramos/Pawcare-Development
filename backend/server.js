@@ -1059,7 +1059,7 @@ app.get('/online_consult_fetch', (req, res) => {
         concern: item.concern_text,
         consultationType: item.type_consult,
         ownerName: item.Owner_name,
-        paymentProof: `http://localhost:5000${item.payment_proof}`,
+        paymentProof: item.payment_proof,
         fileType: item.fileType,
       }));
 
@@ -1667,6 +1667,52 @@ app.put('/edit_pet_history/pet_medical_records/:id', (req, res) => {
   });
 });
 
+app.get('/fetch/user_medical/:username', (req, res) => {
+  const { username } = req.params;
+
+  const sql = `
+    SELECT 
+      uc.email,
+      ui.phoneNumber,
+      ui.houseNum,
+      ui.province,
+      ui.municipality,
+      ui.barangay
+    FROM user_credentials AS uc
+    LEFT JOIN user_infos AS ui
+      ON uc.id = ui.user_id
+    WHERE uc.userName = ?
+  `;
+
+  db.query(sql, [username], (err, results) => {
+    if (err) {
+      console.error("Error fetching user:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    const user = results[0];
+
+    const dataformat = {
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      address: [
+        user.houseNum,
+        user.barangay,
+        user.municipality,
+        user.province
+      ]
+        .filter(Boolean)
+        .join(' ')
+    };
+
+    res.json({ success: true, data: dataformat });
+  });
+});
+
 app.get('/fetch/orders', (req, res) => {
   const sql = `
     SELECT 
@@ -1768,8 +1814,8 @@ app.post('/payment_setorder', async (req, res) => {
   `;
 
   const sqllistorders = `
-    INSERT INTO order_items (order_id, product_name, quantity)
-    VALUES (?, ?, ?)
+    INSERT INTO order_items (order_id, product_ID, product_name, quantity)
+    VALUES (?, ?, ?, ?)
   `;
 
   const sqlUpdateStock = `
@@ -1795,7 +1841,7 @@ app.post('/payment_setorder', async (req, res) => {
       if (Array.isArray(items) && items.length > 0) {
         items.forEach((item) => {
           // 1️⃣ Insert order items
-          db.query(sqllistorders, [orderId, item.name, item.qty], (err2) => {
+          db.query(sqllistorders, [orderId, item.product_ID, item.name, item.qty], (err2) => {
             if (err2) console.error('[DB] Insert Order Items Error:', err2);
           });
 
@@ -1928,6 +1974,35 @@ app.post('/payment_setorder', async (req, res) => {
     console.error('[SERVER ERROR]', err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
+});
+
+app.get('/fetch/user_order/:id', (req, res) => {
+  const { id } = req.params; // ✅ fix: use id, not uid
+
+  const sql = `
+    SELECT 
+      oi.product_ID,
+      i.photo AS product_image,
+      i.price AS product_price,
+      oi.product_name,
+      oi.quantity,
+      o.order_date,
+      o.order_status
+    FROM order_items oi
+    JOIN orders o ON o.id_order = oi.order_id
+    JOIN inventory i ON i.product_ID = oi.product_ID
+    WHERE o.uid = ?
+    ORDER BY o.order_date DESC
+  `;
+
+  db.query(sql, [id], (err, rows) => {
+    if (err) {
+      console.error('Error fetching user purchases:', err);
+      return res.status(500).json({ error: 'Failed to fetch user purchases' });
+    }
+
+    res.json(rows);
+  });
 });
 
 app.post("/api/notifications", (req, res) => {

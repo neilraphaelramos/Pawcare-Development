@@ -72,6 +72,7 @@ const UserInventory = () => {
       address: fullAddress,
       date: formattedDate,
       items: cart.map(item => ({
+        product_ID: item.id,
         name: item.name,
         qty: item.qty
       })),

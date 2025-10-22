@@ -33,6 +33,8 @@ const Dashboard = () => {
 
   const [weekDates, setWeekDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [purchasedProducts, setPurchasedProducts] = useState([]);
+
 
   const getWeekDates = (refDate) => {
     const start = new Date(refDate);
@@ -129,7 +131,21 @@ const Dashboard = () => {
 
   useEffect(() => {
     handleMetricStatus();
-  })
+  });
+
+  useEffect(() => {
+    const fetchPurchasedProducts = async () => {
+      try {
+        const res = await axios.get(`/server-api/fetch/user_order/${user.id}`);
+        setPurchasedProducts(res.data);
+      } catch (err) {
+        console.error("Error fetching purchased products:", err);
+      }
+    };
+
+    if (user?.id) fetchPurchasedProducts();
+  }, [user]);
+
 
   return (
     <div className="user-dashboard">
@@ -231,19 +247,16 @@ const Dashboard = () => {
             <FaChevronRight />
           </div>
           <div className="user-dashboard-products-list">
-            {[
-              { src: "/images/UserInventory/rabies-vaccine.png", label: "Rabies Vaccine" },
-              { src: "/images/UserInventory/antibiotic-syrup.png", label: "Antibiotic Syrup" },
-              { src: "/images/UserInventory/dog-shampoo.png", label: "Dog Shampoo" },
-              { src: "/images/UserInventory/dry-dog-food.png", label: "Dry Dog Food" },
-              { src: "/images/UserInventory/cat-food-wet.png", label: "Cat Food" },
-              { src: "/images/UserInventory/vitamins.png", label: "Vitamins" },
-            ].map((item, i) => (
-              <div key={i} className="user-dashboard-product-item">
-                <img src={item.src} alt={item.label} />
-                <span>{item.label}</span>
-              </div>
-            ))}
+            {purchasedProducts.length === 0 ? (
+              <p className="empty-text">No products purchased yet.</p>
+            ) : (
+              purchasedProducts.map((item, i) => (
+                <div key={i} className="user-dashboard-product-item">
+                  <img src={`/server-api/uploads/${item.product_image}`} alt={item.product_name} />
+                  <span><a onClick={() => navigate('/users/pet-products')}>{item.product_name}</a></span>
+                </div>
+              ))
+            )}
           </div>
         </section>
 

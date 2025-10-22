@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { FaTimes } from 'react-icons/fa';
+import { FaTimes, FaPaperPlane, FaVideo } from 'react-icons/fa';
 import './OnlineConsultation.css';
 import axios from 'axios';
 import { UserContext } from '../../hook/authContext';
@@ -126,7 +126,7 @@ const VetConsultationAdmin = () => {
               <div key={req.id} className={`request-card ${req.consultationType}`}>
                 <h3>{req.petName} ({req.petType})</h3>
                 <p><strong>Owner:</strong> {req.ownerName}</p>
-                <p><strong>Payment Proof:</strong> <a href={req.paymentProof} target="_blank" rel="noopener noreferrer">View File</a></p>
+                <p><strong>Payment Proof:</strong> <a href={`/server-api${req.paymentProof}`} target="_blank" rel="noopener noreferrer">View File</a></p>
                 <p><strong>Concern:</strong> {req.concern}</p>
                 <p><strong>Type:</strong> {req.consultationType}</p>
                 <button className="accommodate-btn" onClick={() => startChat(req.channelConsult)}>Accommodate</button>

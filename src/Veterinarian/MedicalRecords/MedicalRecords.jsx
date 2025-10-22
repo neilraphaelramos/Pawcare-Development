@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { FaPlus, FaRegEye, FaEdit } from 'react-icons/fa';
+import { UserContext } from '../../hook/authContext';
 import axios from 'axios'
 import './MedicalRecords.css';
 
@@ -35,6 +36,23 @@ export default function PetRecords() {
   const [editSpecies, setEditSpecies] = useState("");
   const [editSpeciesOptions, setEditSpeciesOptions] = useState([]);
   const [editLoading, setEditLoading] = useState(false);
+
+  const [userInfo, setUserInfo] = useState([]);
+  const [switchBtn, setSwitchBtn] = useState(false);
+  const { user } = useContext(UserContext);
+
+  const name_vet = {
+      name: [
+        user.firstName,
+        user.middelName,
+        user.lastName,
+        user.suffix
+      ]
+        .filter(Boolean)
+        .join(' ')
+    };
+
+  const formRef = useRef(null);
 
   const APIENDPOINT = '/server-api';
 
@@ -87,7 +105,32 @@ export default function PetRecords() {
       status: '',
       completed: ''
     });
+    setUserInfo([]);
   };
+
+  const handleUserInfo = async (ownerUsername) => {
+    try {
+      const res = await axios.get(`${APIENDPOINT}/fetch/user_medical/${ownerUsername}`);
+      if (res.data?.data) {
+        setUserInfo(res.data.data);
+        console.log("Fetched user info:", res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching user info:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (userInfo && Object.keys(userInfo).length > 0) {
+      setNewRecord((prev) => ({
+        ...prev,
+        ownerEmail: userInfo.email || '',
+        ownerAddress: userInfo.address || '',
+        ownerPhoneNum: userInfo.phoneNumber || ''
+      }));
+    }
+  }, [userInfo]);
+
 
   const handleAddPet = async (e) => {
     e.preventDefault();
@@ -275,7 +318,9 @@ export default function PetRecords() {
     );
   };
 
-  const handleAddRecord = () => setAddingRecord(true);
+  const handleAddRecord = () => {
+    setAddingRecord(true)
+  };
 
   const handleNewRecordChange = (e) => {
     const { name, value } = e.target;
@@ -308,7 +353,7 @@ export default function PetRecords() {
         blood_pressure: newRecord.bloodPressure || '',
         pulse: newRecord.pulse || '',
         medications: newRecord.medications || '',
-        veterinarian_name: "Dr. Default" // or get from logged-in vet context
+        veterinarian_name: `Dr. ${name_vet}`
       });
 
       if (res.data.success) {
@@ -386,7 +431,7 @@ export default function PetRecords() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <button className="add-btn" onClick={() => setShowAddPetModal(true)}>
+          <button className="add-btn margin1" onClick={() => setShowAddPetModal(true)}>
             <FaPlus /> Add Pet
           </button>
         </div>
@@ -463,13 +508,26 @@ export default function PetRecords() {
                 value={modalSearchTerm}
                 onChange={(e) => setModalSearchTerm(e.target.value)}
               />
-              <button className="add-btn" onClick={handleAddRecord}>
-                <FaPlus /> Add Record
+              <button
+                className="add-btn margin2"
+                onClick={() => {
+                  if (switchBtn) {
+                    formRef.current?.requestSubmit();
+                    setSwitchBtn(false);
+                  } else {
+                    handleUserInfo(selectedPet.userName);
+                    handleAddRecord();
+                    setSwitchBtn(true);
+                  }
+                }}
+              >
+                {switchBtn ? "💾 Save" : <><FaPlus /> Add Record</>}
               </button>
+
             </div>
 
             {addingRecord && (
-              <form className="new-record-form" onSubmit={handleNewRecordSubmit}>
+              <form className="new-record-form" ref={formRef} onSubmit={handleNewRecordSubmit}>
                 <input
                   type="text"
                   name="ownerEmail"
@@ -477,6 +535,7 @@ export default function PetRecords() {
                   value={newRecord.ownerEmail}
                   onChange={handleNewRecordChange}
                   required
+                  readOnly
                   className="addvisit-input"
                 />
                 <input
@@ -484,6 +543,7 @@ export default function PetRecords() {
                   name="ownerAddress"
                   placeholder="Address"
                   value={newRecord.ownerAddress}
+                  readOnly
                   onChange={handleNewRecordChange}
                   required
                   className="addvisit-input"
@@ -493,6 +553,7 @@ export default function PetRecords() {
                   name="ownerPhoneNum"
                   placeholder="Phone Number"
                   value={newRecord.ownerPhoneNum}
+                  readOnly
                   onChange={handleNewRecordChange}
                   required
                   className="addvisit-input"
@@ -500,7 +561,7 @@ export default function PetRecords() {
                 <input
                   type="text"
                   name="day"
-                  placeholder="Day"
+                  placeholder="Day of Visit (e.g., Monday)"
                   value={newRecord.day}
                   onChange={handleNewRecordChange}
                   required
@@ -508,19 +569,18 @@ export default function PetRecords() {
                 />
                 <div className="addvisit-input-group">
                   <input
-                  type="date"
-                  name="date"
-                  placeholder="Date"
-                  value={newRecord.date}
-                  onChange={handleNewRecordChange}
-                  required
-                  className="addvisit-input"
-                />
+                    type="date"
+                    name="date"
+                    placeholder="Date"
+                    value={newRecord.date}
+                    onChange={handleNewRecordChange}
+                    required
+                    className="addvisit-input"
+                  />
                   <label htmlFor="completed" className="addvisit-label">
                     Date Visit
                   </label>
                 </div>
-                
                 <input
                   type="text"
                   name="service"

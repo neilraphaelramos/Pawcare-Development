@@ -145,23 +145,30 @@ body {
   flex-wrap: wrap;
 }
 
+.margin1 {
+  margin-top: 2.5px;
+}
+
+.margin2 {
+  margin-top: 10px;
+}
 
 .add-btn {
-  padding: 4px 20px;
-  border: none;
-  border-radius: 4px;
-  background-color: #32b2b2;
-  color: white;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 600;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 6px;
+  background-color: #32b2b2;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
   transition: background-color 0.2s ease;
-  max-width: fit-content;
-  max-height: 50%;
-  height: 50px;
+  height: 42px;
 }
 
 .add-pet-button:hover {
@@ -182,14 +189,23 @@ body {
 }
 
 .pet-modal {
-  background-color: #ffffff;
-  border-radius: 12px;
-  width: fit-content;
-  max-width: 75%;
-  padding: 30px 25px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  max-width: 950px;
+  width: 90%;
+  padding: 30px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  max-height: 90vh;
   position: relative;
-  animation: fadeInScale 0.3s ease-in-out;
+}
+
+.new-record-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+  margin-bottom: 15px;
 }
 
 .pet-modal-add,
@@ -204,12 +220,20 @@ body {
   flex-direction: column;
 }
 
+.pet-modal-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
 .add-pet-form-grid,
 .edit-pet-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 24px;
-  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 15px;
 }
 
 .add-image-upload-box,
@@ -421,13 +445,19 @@ body {
 }
 
 .modal-search-input {
-  width: 100%;
-  padding: 8px 12px;
-  margin-bottom: 1px;
+  flex: 1;
+  padding: 10px 14px;
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 14px;
-  margin-top: 12px;
+  background-color: #fafafa;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-search-input:focus {
+  border-color: #32b2b2;
+  box-shadow: 0 0 4px rgba(50, 178, 178, 0.4);
+  outline: none;
 }
 
 /* Visit Detail Modal Overlay */
@@ -686,18 +716,41 @@ body {
   margin-bottom: 12px;
 }
 
+.pet-modal p {
+  text-align: center;
+  color: #777;
+  font-style: italic;
+  margin-top: 15px;
+}
+
 .addvisit-input-group {
   position: relative;
-  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
 }
 
 .addvisit-input {
-  padding: 12px 14px;
-  margin: 5px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background-color: #fafafa;
+}
+
+.addvisit-input,
+.addvisit-input[type="date"] {
+  height: 45px; /* ensures all inputs have the same height */
+  line-height: normal;
+  padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 15px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+  background-color: #fafafa;
+  box-sizing: border-box;
 }
 
 .addvisit-input:focus {
@@ -726,3 +779,16 @@ body {
   background-color: white;
   padding: 0 4px;
 }
+
+.addvisit-input[type="date"]::-webkit-inner-spin-button,
+.addvisit-input[type="date"]::-webkit-calendar-picker-indicator {
+  margin: 0;
+  padding: 0;
+}
+
+.addvisit-input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
